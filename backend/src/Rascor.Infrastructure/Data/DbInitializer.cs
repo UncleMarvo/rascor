@@ -58,30 +58,34 @@ public static class DbInitializer
         // ========================================================================
         var workTypes = new[]
         {
-            new WorkType(
-                "wt-electrical",
-                "Electrical Work",
-                "All electrical installations, repairs, and maintenance work",
-                true
-            ),
-            new WorkType(
-                "wt-plumbing",
-                "Plumbing & Drainage",
-                "Plumbing installations, water systems, and drainage work",
-                true
-            ),
-            new WorkType(
-                "wt-scaffolding",
-                "Scaffolding",
-                "Scaffold erection, modification, and dismantling",
-                true
-            ),
-            new WorkType(
-                "wt-groundworks",
-                "Groundworks",
-                "Excavation, foundations, and site preparation",
-                true
-            )
+            new WorkType
+            {
+                Id = "wt-electrical",
+                Name = "Electrical Work",
+                Description = "All electrical installations, repairs, and maintenance work",
+                IsActive = true
+            },
+            new WorkType
+            {
+                Id = "wt-plumbing",
+                Name = "Plumbing & Drainage",
+                Description = "Plumbing installations, water systems, and drainage work",
+                IsActive = true
+            },
+            new WorkType
+            {
+                Id = "wt-scaffolding",
+                Name = "Scaffolding",
+                Description = "Scaffold erection, modification, and dismantling",
+                IsActive = true
+            },
+            new WorkType
+            {
+                Id = "wt-groundworks",
+                Name = "Groundworks",
+                Description = "Excavation, foundations, and site preparation",
+                IsActive = true
+            }
         };
 
         db.WorkTypes.AddRange(workTypes);
@@ -92,223 +96,241 @@ public static class DbInitializer
         // ========================================================================
 
         // Electrical RAMS
-        var electricalRams = new RamsDocument(
-            "rams-electrical-001",
-            "wt-electrical",
-            1,
-            "Electrical Safety Method Statement v1.0",
-            "checklist",
-            null, // No JSON content
-            null, // No PDF URL yet
-            true,
-            DateTimeOffset.UtcNow,
-            null,
-            "system"
-        );
+        var electricalRams = new RamsDocument
+        {
+            Id = "rams-electrical-001",
+            WorkTypeId = "wt-electrical",
+            Version = 1,
+            Title = "Electrical Safety Method Statement v1.0",
+            ContentType = "checklist",
+            Content = null,
+            PdfBlobUrl = null,
+            IsActive = true,
+            EffectiveFrom = DateTime.UtcNow,
+            EffectiveTo = null,
+            CreatedBy = "system"
+        };
 
         db.RamsDocuments.Add(electricalRams);
         await db.SaveChangesAsync();
 
         var electricalChecklist = new[]
         {
-            new RamsChecklistItem(
-                "cl-elec-001",
-                "rams-electrical-001",
-                "PPE Requirements",
-                1,
-                "checkbox",
-                "I am wearing appropriate PPE (hard hat, safety boots, hi-vis vest, insulated gloves)",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-elec-002",
-                "rams-electrical-001",
-                "Tools & Equipment",
-                2,
-                "checkbox",
-                "All tools and test equipment have been inspected and are in good working condition",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-elec-003",
-                "rams-electrical-001",
-                "Isolation & Testing",
-                3,
-                "checkbox",
-                "I have verified the circuit is properly isolated and locked out",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-elec-004",
-                "rams-electrical-001",
-                "Isolation & Testing",
-                4,
-                "checkbox",
-                "Dead testing has been completed and documented",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-elec-005",
-                "rams-electrical-001",
-                "Emergency Procedures",
-                5,
-                "checkbox",
-                "I know the location of the nearest first aid kit and fire extinguisher",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-elec-006",
-                "rams-electrical-001",
-                "Emergency Procedures",
-                6,
-                "checkbox",
-                "I have reviewed the emergency evacuation procedure for this site",
-                true,
-                null
-            )
+            new RamsChecklistItem
+            {
+                Id = "cl-elec-001",
+                RamsDocumentId = "rams-electrical-001",
+                Section = "PPE Requirements",
+                DisplayOrder = 1,
+                ItemType = "checkbox",
+                Label = "I am wearing appropriate PPE (hard hat, safety boots, hi-vis vest, insulated gloves)",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-elec-002",
+                RamsDocumentId = "rams-electrical-001",
+                Section = "Tools & Equipment",
+                DisplayOrder = 2,
+                ItemType = "checkbox",
+                Label = "All tools and test equipment have been inspected and are in good working condition",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-elec-003",
+                RamsDocumentId = "rams-electrical-001",
+                Section = "Isolation & Testing",
+                DisplayOrder = 3,
+                ItemType = "checkbox",
+                Label = "I have verified the circuit is properly isolated and locked out",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-elec-004",
+                RamsDocumentId = "rams-electrical-001",
+                Section = "Isolation & Testing",
+                DisplayOrder = 4,
+                ItemType = "checkbox",
+                Label = "Dead testing has been completed and documented",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-elec-005",
+                RamsDocumentId = "rams-electrical-001",
+                Section = "Emergency Procedures",
+                DisplayOrder = 5,
+                ItemType = "checkbox",
+                Label = "I know the location of the nearest first aid kit and fire extinguisher",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-elec-006",
+                RamsDocumentId = "rams-electrical-001",
+                Section = "Emergency Procedures",
+                DisplayOrder = 6,
+                ItemType = "checkbox",
+                Label = "I have reviewed the emergency evacuation procedure for this site",
+                IsRequired = true,
+                ValidationRules = null
+            }
         };
 
         db.RamsChecklistItems.AddRange(electricalChecklist);
 
         // Plumbing RAMS
-        var plumbingRams = new RamsDocument(
-            "rams-plumbing-001",
-            "wt-plumbing",
-            1,
-            "Plumbing & Drainage Safety Method Statement v1.0",
-            "checklist",
-            null,
-            null,
-            true,
-            DateTimeOffset.UtcNow,
-            null,
-            "system"
-        );
+        var plumbingRams = new RamsDocument
+        {
+            Id = "rams-plumbing-001",
+            WorkTypeId = "wt-plumbing",
+            Version = 1,
+            Title = "Plumbing & Drainage Safety Method Statement v1.0",
+            ContentType = "checklist",
+            Content = null,
+            PdfBlobUrl = null,
+            IsActive = true,
+            EffectiveFrom = DateTime.UtcNow,
+            EffectiveTo = null,
+            CreatedBy = "system"
+        };
 
         db.RamsDocuments.Add(plumbingRams);
         await db.SaveChangesAsync();
 
         var plumbingChecklist = new[]
         {
-            new RamsChecklistItem(
-                "cl-plumb-001",
-                "rams-plumbing-001",
-                "PPE Requirements",
-                1,
-                "checkbox",
-                "I am wearing appropriate PPE (hard hat, safety boots, hi-vis vest, waterproof gloves)",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-plumb-002",
-                "rams-plumbing-001",
-                "Water Isolation",
-                2,
-                "checkbox",
-                "Water supply has been isolated and drained where required",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-plumb-003",
-                "rams-plumbing-001",
-                "Confined Spaces",
-                3,
-                "checkbox",
-                "If working in confined space, permit to work has been obtained",
-                false,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-plumb-004",
-                "rams-plumbing-001",
-                "Hot Works",
-                4,
-                "checkbox",
-                "Hot work permit obtained if using blow torches or welding equipment",
-                false,
-                null
-            )
+            new RamsChecklistItem
+            {
+                Id = "cl-plumb-001",
+                RamsDocumentId = "rams-plumbing-001",
+                Section = "PPE Requirements",
+                DisplayOrder = 1,
+                ItemType = "checkbox",
+                Label = "I am wearing appropriate PPE (hard hat, safety boots, hi-vis vest, waterproof gloves)",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-plumb-002",
+                RamsDocumentId = "rams-plumbing-001",
+                Section = "Water Isolation",
+                DisplayOrder = 2,
+                ItemType = "checkbox",
+                Label = "Water supply has been isolated and drained where required",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-plumb-003",
+                RamsDocumentId = "rams-plumbing-001",
+                Section = "Confined Spaces",
+                DisplayOrder = 3,
+                ItemType = "checkbox",
+                Label = "If working in confined space, permit to work has been obtained",
+                IsRequired = false,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-plumb-004",
+                RamsDocumentId = "rams-plumbing-001",
+                Section = "Hot Works",
+                DisplayOrder = 4,
+                ItemType = "checkbox",
+                Label = "Hot work permit obtained if using blow torches or welding equipment",
+                IsRequired = false,
+                ValidationRules = null
+            }
         };
 
         db.RamsChecklistItems.AddRange(plumbingChecklist);
 
         // Scaffolding RAMS
-        var scaffoldingRams = new RamsDocument(
-            "rams-scaffolding-001",
-            "wt-scaffolding",
-            1,
-            "Scaffolding Safety Method Statement v1.0",
-            "checklist",
-            null,
-            null,
-            true,
-            DateTimeOffset.UtcNow,
-            null,
-            "system"
-        );
+        var scaffoldingRams = new RamsDocument
+        {
+            Id = "rams-scaffolding-001",
+            WorkTypeId = "wt-scaffolding",
+            Version = 1,
+            Title = "Scaffolding Safety Method Statement v1.0",
+            ContentType = "checklist",
+            Content = null,
+            PdfBlobUrl = null,
+            IsActive = true,
+            EffectiveFrom = DateTime.UtcNow,
+            EffectiveTo = null,
+            CreatedBy = "system"
+        };
 
         db.RamsDocuments.Add(scaffoldingRams);
         await db.SaveChangesAsync();
 
         var scaffoldingChecklist = new[]
         {
-            new RamsChecklistItem(
-                "cl-scaff-001",
-                "rams-scaffolding-001",
-                "Qualifications",
-                1,
-                "checkbox",
-                "I hold a valid CISRS scaffolding card or equivalent",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-scaff-002",
-                "rams-scaffolding-001",
-                "PPE Requirements",
-                2,
-                "checkbox",
-                "I am wearing full PPE including harness and hard hat with chin strap",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-scaff-003",
-                "rams-scaffolding-001",
-                "Equipment Check",
-                3,
-                "checkbox",
-                "All scaffolding components have been inspected for damage",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-scaff-004",
-                "rams-scaffolding-001",
-                "Weather Conditions",
-                4,
-                "checkbox",
-                "Weather conditions are suitable for working at height (no high winds or rain)",
-                true,
-                null
-            ),
-            new RamsChecklistItem(
-                "cl-scaff-005",
-                "rams-scaffolding-001",
-                "Exclusion Zone",
-                5,
-                "checkbox",
-                "Exclusion zone has been established and marked below work area",
-                true,
-                null
-            )
+            new RamsChecklistItem
+            {
+                Id = "cl-scaff-001",
+                RamsDocumentId = "rams-scaffolding-001",
+                Section = "Qualifications",
+                DisplayOrder = 1,
+                ItemType = "checkbox",
+                Label = "I hold a valid CISRS scaffolding card or equivalent",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-scaff-002",
+                RamsDocumentId = "rams-scaffolding-001",
+                Section = "PPE Requirements",
+                DisplayOrder = 2,
+                ItemType = "checkbox",
+                Label = "I am wearing full PPE including harness and hard hat with chin strap",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-scaff-003",
+                RamsDocumentId = "rams-scaffolding-001",
+                Section = "Equipment Check",
+                DisplayOrder = 3,
+                ItemType = "checkbox",
+                Label = "All scaffolding components have been inspected for damage",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-scaff-004",
+                RamsDocumentId = "rams-scaffolding-001",
+                Section = "Weather Conditions",
+                DisplayOrder = 4,
+                ItemType = "checkbox",
+                Label = "Weather conditions are suitable for working at height (no high winds or rain)",
+                IsRequired = true,
+                ValidationRules = null
+            },
+            new RamsChecklistItem
+            {
+                Id = "cl-scaff-005",
+                RamsDocumentId = "rams-scaffolding-001",
+                Section = "Exclusion Zone",
+                DisplayOrder = 5,
+                ItemType = "checkbox",
+                Label = "Exclusion zone has been established and marked below work area",
+                IsRequired = true,
+                ValidationRules = null
+            }
         };
 
         db.RamsChecklistItems.AddRange(scaffoldingChecklist);
@@ -319,45 +341,45 @@ public static class DbInitializer
         // ========================================================================
         var workAssignments = new[]
         {
-            // User has electrical work at Dublin Office
-            new WorkAssignment(
-                "wa-001",
-                "user-demo",
-                "site-001",
-                "wt-electrical",
-                "system",
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow.AddDays(30),
-                "Active",
-                "Electrical maintenance and lighting upgrades"
-            ),
-            // User has plumbing work at Dublin Warehouse
-            new WorkAssignment(
-                "wa-002",
-                "user-demo",
-                "site-002",
-                "wt-plumbing",
-                "system",
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow.AddDays(14),
-                "Active",
-                "Install new drainage system in warehouse"
-            ),
-            // User has scaffolding work at Cork Office
-            new WorkAssignment(
-                "wa-003",
-                "user-demo",
-                "site-003",
-                "wt-scaffolding",
-                "system",
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow.AddDays(7),
-                DateTimeOffset.UtcNow.AddDays(21),
-                "Pending",
-                "Erect scaffolding for exterior maintenance work"
-            )
+            new WorkAssignment
+            {
+                Id = "wa-001",
+                UserId = "user-demo",
+                SiteId = "site-001",
+                WorkTypeId = "wt-electrical",
+                AssignedBy = "system",
+                AssignedAt = DateTime.UtcNow,
+                ExpectedStartDate = DateTime.UtcNow,
+                ExpectedEndDate = DateTime.UtcNow.AddDays(30),
+                Status = "Active",
+                Notes = "Electrical maintenance and lighting upgrades"
+            },
+            new WorkAssignment
+            {
+                Id = "wa-002",
+                UserId = "user-demo",
+                SiteId = "site-002",
+                WorkTypeId = "wt-plumbing",
+                AssignedBy = "system",
+                AssignedAt = DateTime.UtcNow,
+                ExpectedStartDate = DateTime.UtcNow,
+                ExpectedEndDate = DateTime.UtcNow.AddDays(14),
+                Status = "Active",
+                Notes = "Install new drainage system in warehouse"
+            },
+            new WorkAssignment
+            {
+                Id = "wa-003",
+                UserId = "user-demo",
+                SiteId = "site-003",
+                WorkTypeId = "wt-scaffolding",
+                AssignedBy = "system",
+                AssignedAt = DateTime.UtcNow,
+                ExpectedStartDate = DateTime.UtcNow.AddDays(7),
+                ExpectedEndDate = DateTime.UtcNow.AddDays(21),
+                Status = "Pending",
+                Notes = "Erect scaffolding for exterior maintenance work"
+            }
         };
 
         db.WorkAssignments.AddRange(workAssignments);
