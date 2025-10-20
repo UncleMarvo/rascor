@@ -3,6 +3,7 @@ using Rascor.Domain.Entities;
 using Rascor.Domain.Repositories;
 using Rascor.Application.DTOs;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Rascor.Application;
 
@@ -26,11 +27,11 @@ public class SubmitRamsAcceptanceHandler
     }
 
     public async Task<RamsAcceptanceDto> HandleAsync(
-        RamsAcceptanceRequest request,
+        CreateRamsAcceptanceRequest request,
         CancellationToken ct = default)
     {
         // Validate RAMS document exists
-        var document = await _documentRepo.GetByIdAsync(request.RamsDocumentId, ct);
+        var document = await _documentRepo.GetByIdAsync(request.RamsDocumentId);
         if (document == null)
         {
             throw new InvalidOperationException(
@@ -38,38 +39,41 @@ public class SubmitRamsAcceptanceHandler
         }
 
         // Check if already accepted today
-        var existingToday = await _acceptanceRepo.HasAcceptedTodayAsync(
+        var existingToday = await _acceptanceRepo.HasSignedTodayAsync(
             request.UserId,
-            request.RamsDocumentId,
-            ct);
+            request.SiteId,
+            request.WorkAssignmentId);
 
         if (existingToday)
         {
             _logger.LogWarning(
-                "User {UserId} has already accepted RAMS {DocumentId} today",
+                "User {UserId} has already signed RAMS at site {SiteId} today",
                 request.UserId,
-                request.RamsDocumentId);
+                request.SiteId);
             throw new InvalidOperationException(
-                "RAMS document already accepted today");
+                "RAMS document already signed today");
         }
 
         // Create acceptance
-        var acceptance = new RamsAcceptance(
-            Guid.NewGuid().ToString(),
-            request.UserId,
-            request.SiteId,
-            request.WorkAssignmentId,
-            request.RamsDocumentId,
-            request.SignatureData,
-            request.IpAddress,
-            request.DeviceInfo,
-            request.Latitude,
-            request.Longitude,
-            _clock.UtcNow,
-            request.ChecklistResponses
-        );
+        var acceptance = new RamsAcceptance
+        {
+            Id = Guid.NewGuid().ToString(),
+            UserId = request.UserId,
+            SiteId = request.SiteId,
+            WorkAssignmentId = request.WorkAssignmentId,
+            RamsDocumentId = request.RamsDocumentId,
+            SignatureData = request.SignatureData,
+            IpAddress = request.IpAddress,
+            DeviceInfo = request.DeviceInfo,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            AcceptedAt = _clock.UtcNow.DateTime,
+            ChecklistResponses = request.ChecklistResponses != null 
+                ? JsonSerializer.Serialize(request.ChecklistResponses) 
+                : null
+        };
 
-        await _acceptanceRepo.AddAsync(acceptance, ct);
+        await _acceptanceRepo.CreateAsync(acceptance);
 
         _logger.LogInformation(
             "RAMS acceptance created: User={UserId}, Document={DocumentId}, Site={SiteId}",
@@ -81,24 +85,14 @@ public class SubmitRamsAcceptanceHandler
             acceptance.Id,
             acceptance.UserId,
             acceptance.SiteId,
-            acceptance.WorkAssignmentId,
+            "", // SiteName - would need to load Site
+            acceptance.WorkAssignmentId ?? "",
             acceptance.RamsDocumentId,
+            document.Title,
             acceptance.AcceptedAt,
+            acceptance.IpAddress,
             acceptance.Latitude,
             acceptance.Longitude
         );
     }
 }
-
-public record RamsAcceptanceRequest(
-    string UserId,
-    string SiteId,
-    string? WorkAssignmentId,
-    string RamsDocumentId,
-    string SignatureData,
-    string? IpAddress,
-    string? DeviceInfo,
-    double? Latitude,
-    double? Longitude,
-    string? ChecklistResponses
-);

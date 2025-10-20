@@ -21,7 +21,7 @@ public class GetRamsDocumentHandler
         string documentId, 
         CancellationToken ct = default)
     {
-        var document = await _repo.GetByIdAsync(documentId, ct);
+        var document = await _repo.GetByIdAsync(documentId);
         
         if (document == null)
         {
@@ -37,12 +37,15 @@ public class GetRamsDocumentHandler
         return new RamsDocumentDto(
             document.Id,
             document.WorkTypeId,
+            document.WorkType?.Name ?? "",
             document.Version,
             document.Title,
             document.ContentType,
             document.Content,
             document.PdfBlobUrl,
-            document.ChecklistItems.Select(item => new RamsChecklistItemDto(
+            document.IsActive,
+            document.EffectiveFrom,
+            document.ChecklistItems?.Select(item => new RamsChecklistItemDto(
                 item.Id,
                 item.Section,
                 item.DisplayOrder,
@@ -54,16 +57,16 @@ public class GetRamsDocumentHandler
         );
     }
 
-    public async Task<RamsDocumentDto?> GetActiveByWorkTypeAsync(
+    public async Task<RamsDocumentDto?> GetCurrentVersionAsync(
         string workTypeId,
         CancellationToken ct = default)
     {
-        var document = await _repo.GetActiveByWorkTypeAsync(workTypeId, ct);
+        var document = await _repo.GetCurrentVersionAsync(workTypeId);
         
         if (document == null)
         {
             _logger.LogWarning(
-                "No active RAMS document found for work type {WorkTypeId}", 
+                "No current RAMS document found for work type {WorkTypeId}", 
                 workTypeId);
             return null;
         }

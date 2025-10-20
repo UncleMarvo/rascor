@@ -46,17 +46,20 @@ public class GetMobileBootstrap
             .ToList();
 
         // Get work assignments
-        var workAssignments = await _workAssignmentRepo.GetByUserIdAsync(userId, ct);
+        var workAssignments = await _workAssignmentRepo.GetByUserIdAsync(userId);
         var workAssignmentDtos = workAssignments
             .Select(a => new WorkAssignmentDto(
                 a.Id,
                 a.UserId,
                 a.SiteId,
+                a.Site?.Name ?? "",
                 a.WorkTypeId,
-                a.Status,
+                a.WorkType?.Name ?? "",
+                a.AssignedBy,
                 a.AssignedAt,
                 a.ExpectedStartDate,
                 a.ExpectedEndDate,
+                a.Status,
                 a.Notes
             ))
             .ToList();
@@ -65,23 +68,23 @@ public class GetMobileBootstrap
         var ramsSigned = new Dictionary<string, bool>();
         foreach (var assignment in workAssignments)
         {
-            var hasSigned = await _ramsAcceptanceRepo.HasAcceptedTodayAsync(
+            var hasSigned = await _ramsAcceptanceRepo.HasSignedTodayAsync(
                 userId,
-                assignment.WorkTypeId,
-                ct);
-            ramsSigned[assignment.WorkTypeId] = hasSigned;
+                assignment.SiteId,
+                assignment.Id);
+            ramsSigned[$"{assignment.SiteId}_{assignment.WorkTypeId}"] = hasSigned;
         }
 
         var remoteConfig = new RemoteConfigDto(
-            config.PollIntervalSeconds,
-            config.EnableOfflineMode
+            60, // Default poll interval
+            true // Enable offline mode
         );
 
         _logger.LogInformation(
             "Mobile bootstrap for user {UserId}: {SiteCount} sites, {AssignmentCount} assignments",
             userId, 
             sites.Count, 
-            workAssignments.Count);
+            workAssignments.Count());
 
         return new MobileBootstrapDto(
             remoteConfig,

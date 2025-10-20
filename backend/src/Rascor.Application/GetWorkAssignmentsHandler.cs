@@ -21,22 +21,25 @@ public class GetWorkAssignmentsHandler
         string userId, 
         CancellationToken ct = default)
     {
-        var assignments = await _repo.GetByUserIdAsync(userId, ct);
+        var assignments = await _repo.GetByUserIdAsync(userId);
         
         _logger.LogInformation(
             "Retrieved {Count} work assignments for user {UserId}", 
-            assignments.Count, 
+            assignments.Count(), 
             userId);
         
         return assignments.Select(a => new WorkAssignmentDto(
             a.Id,
             a.UserId,
             a.SiteId,
+            a.Site?.Name ?? "",
             a.WorkTypeId,
-            a.Status,
+            a.WorkType?.Name ?? "",
+            a.AssignedBy,
             a.AssignedAt,
             a.ExpectedStartDate,
             a.ExpectedEndDate,
+            a.Status,
             a.Notes
         )).ToList();
     }

@@ -19,14 +19,15 @@ public class GetWorkTypesHandler
 
     public async Task<List<WorkTypeDto>> ExecuteAsync(CancellationToken ct = default)
     {
-        var workTypes = await _repo.GetAllAsync(ct);
+        var workTypes = await _repo.GetAllActiveAsync();
         
-        _logger.LogInformation("Retrieved {Count} work types", workTypes.Count);
+        _logger.LogInformation("Retrieved {Count} work types", workTypes.Count());
         
         return workTypes.Select(w => new WorkTypeDto(
             w.Id,
             w.Name,
-            w.Description
+            w.Description,
+            w.IsActive
         )).ToList();
     }
 }
