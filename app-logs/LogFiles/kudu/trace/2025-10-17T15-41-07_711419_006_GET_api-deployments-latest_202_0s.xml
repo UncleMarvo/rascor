@@ -1,0 +1,9 @@
+<step title="Incoming Request" date="2025-10-17T15:41:07.996" instance="711419" url="/api/deployments/latest?deployer=Push-Deployer&amp;time=2025-10-17_15-41-04Z" method="GET" type="request" pid="821,1,7" Host="siteattendance-api-1411956859.scm.azurewebsites.net" User-Agent="websdk/WebSdk_VisualStudio_17.0 websdk/WebSdk_VisualStudio_17.0 websdk/WebSdk_VisualStudio_17.0" Authorization="Bea..." Cookie="ARRAffinity=7114196f35f0386dc4d669bee27d8676c43cd1e65702bae2f85e34f0fb596d4c; ARRAffinitySameSite=7114196f35f0386dc4d669bee27d8676c43cd1e65702bae2f85e34f0fb596d4c" X-ARR-LOG-ID="63ad9c7b-2cfd-42db-b4e1-797ad00fb8c0" CLIENT-IP="31.200.149.151:59647" X-SITE-DEPLOYMENT-ID="siteattendance-api-1411956859" WAS-DEFAULT-HOSTNAME="siteattendance-api-1411956859.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=Push-Deployer&amp;time=2025-10-17_15-41-04Z" X-Client-IP="31.200.149.151" X-Client-Port="59647" >
+  <step title="Cleanup Xml Logs" date="2025-10-17T15:41:08.006" /><!-- duration: 11ms -->
+  <step title="DeploymentService.GetResult" date="2025-10-17T15:41:08.030" >
+    <step title="DeploymentService.GetLatestDeployment" date="2025-10-17T15:41:08.034" >
+      <step title="DeploymentManager.GetResults" date="2025-10-17T15:41:08.038" /><!-- duration: 174ms -->
+    </step><!-- duration: 191ms -->
+  </step><!-- duration: 204ms -->
+  <step title="Outgoing response" date="2025-10-17T15:41:08.241" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 7ms -->
+</step><!-- duration: 259ms -->

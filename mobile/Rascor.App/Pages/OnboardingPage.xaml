@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Rascor.App.Pages.OnboardingPage"
+             Title="Welcome">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,20"
+            Spacing="20">
+
+            <Label
+                Text="Welcome to RASCOR"
+                FontSize="28"
+                FontAttributes="Bold"
+                TextColor="#1A1A1A"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="Automatic job site tracking"
+                FontSize="18"
+                TextColor="#4A4A4A"
+                HorizontalOptions="Center"
+                Margin="0,0,0,20" />
+
+            <!-- Step 1 -->
+            <Border
+                BackgroundColor="#F0F0F0"
+                Padding="15"
+                StrokeThickness="0">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="📍 Step 1: Location Permission"
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#1A1A1A" />
+                    <Label
+                        Text="This app automatically tracks when you arrive at and leave job sites."
+                        FontSize="14"
+                        TextColor="#2A2A2A" />
+                    <Label
+                        Text="⚠️ IMPORTANT: When prompted, select 'Allow all the time' (not 'Only while using the app')"
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        TextColor="#D32F2F" />
+                    <Label
+                        Text="Why: Geofencing only works with 'all the time' permission, even when the app is closed."
+                        FontSize="12"
+                        TextColor="#4A4A4A" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Step 2 -->
+            <Border
+                BackgroundColor="#F0F0F0"
+                Padding="15"
+                StrokeThickness="0">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="🔔 Step 2: Notifications"
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#1A1A1A" />
+                    <Label
+                        Text="You'll receive notifications when you enter or exit job sites."
+                        FontSize="14"
+                        TextColor="#2A2A2A" />
+                    <Label
+                        Text="When prompted, tap 'Allow' to enable notifications."
+                        FontSize="14"
+                        TextColor="#2A2A2A" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Step 3 -->
+            <Border
+                BackgroundColor="#F0F0F0"
+                Padding="15"
+                StrokeThickness="0">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="✅ Step 3: You're All Set!"
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#1A1A1A" />
+                    <Label
+                        Text="The app will automatically monitor assigned job sites and track your attendance in the background."
+                        FontSize="14"
+                        TextColor="#2A2A2A" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button
+                x:Name="GetStartedBtn"
+                Text="Get Started"
+                Clicked="OnGetStartedClicked"
+                BackgroundColor="#4CAF50"
+                TextColor="White"
+                FontSize="18"
+                FontAttributes="Bold"
+                Margin="0,20,0,0"
+                HorizontalOptions="Fill" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Rascor.App.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+
+            <Label
+                Text="RASCOR"
+                SemanticProperties.HeadingLevel="Level1"
+                FontSize="32"
+                HorizontalOptions="Center" />
+
+            <Label
+                x:Name="StatusLabel"
+                Text="Ready"
+                SemanticProperties.HeadingLevel="Level2"
+                FontSize="18"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="CopyDeviceIdBtn"
+                Text="📋 Copy Device ID"
+                Clicked="OnCopyDeviceIdClicked"
+                HorizontalOptions="Fill"
+                BackgroundColor="Gray" />
+
+            <Button
+                x:Name="SyncBtn"
+                Text="Sync Offline Events"
+                Clicked="OnSyncClicked"
+                HorizontalOptions="Fill"
+                BackgroundColor="Orange" />
+
+            <Label
+                Text="Testing Tools"
+                FontSize="20"
+                Margin="0,20,0,0"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="InitializeBtn"
+                Text="Start Monitoring"
+                Clicked="OnInitializeClicked"
+                HorizontalOptions="Fill" />
+
+            <Button
+                x:Name="TestNotificationBtn"
+                Text="🔔 Test Notification"
+                Clicked="OnTestNotificationClicked"
+                HorizontalOptions="Fill"
+                BackgroundColor="Purple" />
+
+            <Button
+                x:Name="SimulateEnterBtn"
+                Text="Simulate Enter Event"
+                Clicked="OnSimulateEnterClicked"
+                HorizontalOptions="Fill" />
+
+            <Button
+                x:Name="SimulateExitBtn"
+                Text="Simulate Exit Event"
+                Clicked="OnSimulateExitClicked"
+                HorizontalOptions="Fill" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
