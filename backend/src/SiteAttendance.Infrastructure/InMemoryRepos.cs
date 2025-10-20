@@ -1,7 +1,7 @@
-using SiteAttendance.Domain;
+using Rascor.Domain;
 using System.Collections.Concurrent;
 
-namespace SiteAttendance.Infrastructure;
+namespace Rascor.Infrastructure;
 
 public class InMemoryGeofenceEventRepository : IGeofenceEventRepository
 {

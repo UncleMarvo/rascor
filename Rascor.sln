@@ -15,9 +15,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteAttendance.Domain", "ba
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteAttendance.Infrastructure", "backend\src\SiteAttendance.Infrastructure\SiteAttendance.Infrastructure.csproj", "{44444444-4444-4444-4444-444444444444}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteAttendance.App", "mobile\SiteAttendance.App\SiteAttendance.App.csproj", "{55555555-5555-5555-5555-555555555555}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteAttendance.App", "mobile\Rascor.App\Rascor.App.csproj", "{55555555-5555-5555-5555-555555555555}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteAttendance.App.Core", "mobile\SiteAttendance.App.Core\SiteAttendance.App.Core.csproj", "{66666666-6666-6666-6666-666666666666}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiteAttendance.App.Core", "mobile\Rascor.App.Core\Rascor.App.Core.csproj", "{66666666-6666-6666-6666-666666666666}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,6 +1,6 @@
-using SiteAttendance.Domain;
+using Rascor.Domain;
 
-namespace SiteAttendance.Infrastructure;
+namespace Rascor.Infrastructure;
 
 public class InMemorySettingsRepository : ISettingsRepository
 {

@@ -1,14 +1,14 @@
 using Microsoft.EntityFrameworkCore;
-using SiteAttendance.Domain;
-using SiteAttendance.Infrastructure.Data;
+using Rascor.Domain;
+using Rascor.Infrastructure.Data;
 
-namespace SiteAttendance.Infrastructure.Repositories;
+namespace Rascor.Infrastructure.Repositories;
 
 public class EfGeofenceEventRepository : IGeofenceEventRepository
 {
-    private readonly SiteAttendanceDbContext _db;
+    private readonly RascorDbContext _db;
 
-    public EfGeofenceEventRepository(SiteAttendanceDbContext db)
+    public EfGeofenceEventRepository(RascorDbContext db)
     {
         _db = db;
     }

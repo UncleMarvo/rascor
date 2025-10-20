@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SiteAttendance.Infrastructure.Migrations
+namespace Rascor.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

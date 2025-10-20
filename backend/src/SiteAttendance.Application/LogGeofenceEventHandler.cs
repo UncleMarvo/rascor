@@ -1,7 +1,7 @@
-using SiteAttendance.Domain;
+using Rascor.Domain;
 using Microsoft.Extensions.Logging;
 
-namespace SiteAttendance.Application;
+namespace Rascor.Application;
 
 public class LogGeofenceEventHandler
 {

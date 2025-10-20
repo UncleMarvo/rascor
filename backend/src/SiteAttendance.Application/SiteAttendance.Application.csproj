@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SiteAttendance.Domain\SiteAttendance.Domain.csproj" />
-    <ProjectReference Include="..\SiteAttendance.Infrastructure\SiteAttendance.Infrastructure.csproj" />
+    <ProjectReference Include="..\Rascor.Domain\Rascor.Domain.csproj" />
+    <ProjectReference Include="..\Rascor.Infrastructure\Rascor.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

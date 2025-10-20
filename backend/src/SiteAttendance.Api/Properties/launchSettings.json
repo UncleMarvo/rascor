@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "SiteAttendance.Api": {
+    "Rascor.Api": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

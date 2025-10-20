@@ -1,7 +1,7 @@
-using SiteAttendance.Domain;
+using Rascor.Domain;
 using Microsoft.Extensions.Logging;
 
-namespace SiteAttendance.Infrastructure;
+namespace Rascor.Infrastructure;
 
 public class MockPushProvider : IPushProvider
 {

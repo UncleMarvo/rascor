@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SiteAttendance.Application\SiteAttendance.Application.csproj" />
-    <ProjectReference Include="..\SiteAttendance.Domain\SiteAttendance.Domain.csproj" />
-    <ProjectReference Include="..\SiteAttendance.Infrastructure\SiteAttendance.Infrastructure.csproj" />
+    <ProjectReference Include="..\Rascor.Application\Rascor.Application.csproj" />
+    <ProjectReference Include="..\Rascor.Domain\Rascor.Domain.csproj" />
+    <ProjectReference Include="..\Rascor.Infrastructure\Rascor.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

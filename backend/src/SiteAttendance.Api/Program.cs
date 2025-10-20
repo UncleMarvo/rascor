@@ -1,8 +1,8 @@
-using SiteAttendance.Application;
-using SiteAttendance.Domain;
-using SiteAttendance.Infrastructure;
-using SiteAttendance.Infrastructure.Data;
-using SiteAttendance.Infrastructure.Repositories;
+using Rascor.Application;
+using Rascor.Domain;
+using Rascor.Infrastructure;
+using Rascor.Infrastructure.Data;
+using Rascor.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,7 +49,7 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 // Add DbContext with PostgreSQL
-builder.Services.AddDbContext<SiteAttendanceDbContext>(options =>
+builder.Services.AddDbContext<RascorDbContext>(options =>
     options.UseNpgsql(
         connectionString,
         npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
@@ -81,7 +81,7 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var scopeLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        var db = scope.ServiceProvider.GetRequiredService<SiteAttendanceDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<RascorDbContext>();
         
         scopeLogger.LogInformation("Starting database migration...");
         
@@ -130,7 +130,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", () => new
 {
-    Service = "SiteAttendance API",
+    Service = "Rascor API",
     Version = "1.0.0-MVP",
     Endpoints = new[]
     {

@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using SiteAttendance.Domain;
+using Rascor.Domain;
 
-namespace SiteAttendance.Infrastructure.Data;
+namespace Rascor.Infrastructure.Data;
 
 public static class DbInitializer
 {
-    public static async Task SeedAsync(SiteAttendanceDbContext db)
+    public static async Task SeedAsync(RascorDbContext db)
     {
         // Check if data already exists
         if (await db.Sites.AnyAsync())

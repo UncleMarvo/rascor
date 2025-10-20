@@ -1,4 +1,4 @@
-namespace SiteAttendance.Domain;
+namespace Rascor.Domain;
 
 // ============================================================================
 // ENTITIES

@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using SiteAttendance.Domain;
+using Rascor.Domain;
 
-namespace SiteAttendance.Infrastructure.Data;
+namespace Rascor.Infrastructure.Data;
 
-public class SiteAttendanceDbContext : DbContext
+public class RascorDbContext : DbContext
 {
-    public SiteAttendanceDbContext(DbContextOptions<SiteAttendanceDbContext> options)
+    public RascorDbContext(DbContextOptions<RascorDbContext> options)
         : base(options)
     {
     }
