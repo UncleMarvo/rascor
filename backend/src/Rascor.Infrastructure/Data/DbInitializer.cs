@@ -8,50 +8,57 @@ public static class DbInitializer
 {
     public static async Task SeedAsync(RascorDbContext db)
     {
-        // Check if data already exists
-        if (await db.Sites.AnyAsync())
-            return; // Already seeded
-
-        // ========================================================================
-        // SEED SITES
-        // ========================================================================
-        var testSites = new[]
+        // Seed sites if they don't exist
+        if (!await db.Sites.AnyAsync())
         {
-            new Site(
-                Id: "site-001",
-                Name: "Dublin Office",
-                Latitude: 53.3498,
-                Longitude: -6.2603,
-                RadiusMeters: 100
-            ),
-            new Site(
-                Id: "site-002",
-                Name: "Dublin Warehouse",
-                Latitude: 53.3520,
-                Longitude: -6.2570,
-                RadiusMeters: 150
-            ),
-            new Site(
-                Id: "site-003",
-                Name: "Cork Office",
-                Latitude: 51.8985,
-                Longitude: -8.4756,
-                RadiusMeters: 120
-            )
-        };
+            var testSites = new[]
+            {
+                new Site(
+                    Id: "site-001",
+                    Name: "Dublin Office",
+                    Latitude: 53.3498,
+                    Longitude: -6.2603,
+                    RadiusMeters: 100
+                ),
+                new Site(
+                    Id: "site-002",
+                    Name: "Dublin Warehouse",
+                    Latitude: 53.3520,
+                    Longitude: -6.2570,
+                    RadiusMeters: 150
+                ),
+                new Site(
+                    Id: "site-003",
+                    Name: "Cork Office",
+                    Latitude: 51.8985,
+                    Longitude: -8.4756,
+                    RadiusMeters: 120
+                )
+            };
 
-        db.Sites.AddRange(testSites);
+            db.Sites.AddRange(testSites);
 
-        // Add test assignment (user-demo → all sites)
-        var assignments = new[]
+            // Add test assignment (user-demo → all sites)
+            var assignments = new[]
+            {
+                new UserAssignment("user-demo", "site-001", DateTimeOffset.UtcNow),
+                new UserAssignment("user-demo", "site-002", DateTimeOffset.UtcNow),
+                new UserAssignment("user-demo", "site-003", DateTimeOffset.UtcNow)
+            };
+
+            db.Assignments.AddRange(assignments);
+            await db.SaveChangesAsync();
+            Console.WriteLine("✅ Sites seeded successfully!");
+        }
+
+        // Check if RAMS data already exists
+        if (await db.WorkTypes.AnyAsync())
         {
-            new UserAssignment("user-demo", "site-001", DateTimeOffset.UtcNow),
-            new UserAssignment("user-demo", "site-002", DateTimeOffset.UtcNow),
-            new UserAssignment("user-demo", "site-003", DateTimeOffset.UtcNow)
-        };
+            Console.WriteLine("ℹ️ RAMS data already exists, skipping seed.");
+            return;
+        }
 
-        db.Assignments.AddRange(assignments);
-        await db.SaveChangesAsync();
+        Console.WriteLine("🌱 Seeding RAMS data...");
 
         // ========================================================================
         // SEED WORK TYPES
@@ -90,6 +97,7 @@ public static class DbInitializer
 
         db.WorkTypes.AddRange(workTypes);
         await db.SaveChangesAsync();
+        Console.WriteLine("  ✓ Work types seeded");
 
         // ========================================================================
         // SEED RAMS DOCUMENTS WITH CHECKLISTS
@@ -185,6 +193,7 @@ public static class DbInitializer
         };
 
         db.RamsChecklistItems.AddRange(electricalChecklist);
+        Console.WriteLine("  ✓ Electrical RAMS seeded (6 checklist items)");
 
         // Plumbing RAMS
         var plumbingRams = new RamsDocument
@@ -254,6 +263,7 @@ public static class DbInitializer
         };
 
         db.RamsChecklistItems.AddRange(plumbingChecklist);
+        Console.WriteLine("  ✓ Plumbing RAMS seeded (4 checklist items)");
 
         // Scaffolding RAMS
         var scaffoldingRams = new RamsDocument
@@ -335,6 +345,7 @@ public static class DbInitializer
 
         db.RamsChecklistItems.AddRange(scaffoldingChecklist);
         await db.SaveChangesAsync();
+        Console.WriteLine("  ✓ Scaffolding RAMS seeded (5 checklist items)");
 
         // ========================================================================
         // SEED WORK ASSIGNMENTS
@@ -384,7 +395,8 @@ public static class DbInitializer
 
         db.WorkAssignments.AddRange(workAssignments);
         await db.SaveChangesAsync();
+        Console.WriteLine("  ✓ Work assignments seeded (3 assignments)");
 
-        Console.WriteLine("✅ Database seeded successfully with RAMS demo data!");
+        Console.WriteLine("✅ RAMS data seeded successfully!");
     }
 }
