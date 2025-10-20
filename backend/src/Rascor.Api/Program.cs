@@ -1,5 +1,6 @@
 using Rascor.Application;
 using Rascor.Domain;
+using Rascor.Domain.Repositories;
 using Rascor.Infrastructure;
 using Rascor.Infrastructure.Data;
 using Rascor.Infrastructure.Repositories;
@@ -65,6 +66,12 @@ builder.Services.AddScoped<ISiteRepository, EfSiteRepository>();
 builder.Services.AddScoped<IAssignmentRepository, EfAssignmentRepository>();
 builder.Services.AddSingleton<ISettingsRepository, InMemorySettingsRepository>(); // Keep in-memory for now
 
+// RAMS Repositories
+builder.Services.AddScoped<IWorkTypeRepository, WorkTypeRepository>();
+builder.Services.AddScoped<IRamsDocumentRepository, RamsDocumentRepository>();
+builder.Services.AddScoped<IWorkAssignmentRepository, WorkAssignmentRepository>();
+builder.Services.AddScoped<IRamsAcceptanceRepository, RamsAcceptanceRepository>();
+
 // Providers (swappable)
 builder.Services.AddSingleton<IPushProvider, MockPushProvider>();
 builder.Services.AddSingleton<IEmailProvider, ConsoleEmailProvider>();
@@ -72,6 +79,12 @@ builder.Services.AddSingleton<IEmailProvider, ConsoleEmailProvider>();
 // Application handlers
 builder.Services.AddScoped<LogGeofenceEventHandler>();
 builder.Services.AddScoped<GetMobileBootstrap>();
+
+// RAMS Application handlers
+builder.Services.AddScoped<GetWorkTypesHandler>();
+builder.Services.AddScoped<GetWorkAssignmentsHandler>();
+builder.Services.AddScoped<GetRamsDocumentHandler>();
+builder.Services.AddScoped<SubmitRamsAcceptanceHandler>();
 
 var app = builder.Build();
 
@@ -131,11 +144,16 @@ app.UseHttpsRedirection();
 app.MapGet("/", () => new
 {
     Service = "Rascor API",
-    Version = "1.0.0-MVP",
+    Version = "2.0.0-RAMS",
     Endpoints = new[]
     {
         "GET /config/mobile?userId={id}",
         "POST /events/geofence",
+        "GET /api/work-types",
+        "GET /api/assignments?userId={id}",
+        "GET /api/rams/{id}",
+        "GET /api/rams/work-type/{workTypeId}",
+        "POST /api/rams/accept",
         "GET /swagger"
     }
 });
@@ -169,6 +187,100 @@ app.MapPost("/events/geofence", async (
 .WithName("LogGeofenceEvent")
 .WithOpenApi();
 
+// ============================================================================
+// RAMS ENDPOINTS
+// ============================================================================
+
+// GET /api/work-types - List all active work types
+app.MapGet("/api/work-types", async (
+    GetWorkTypesHandler handler,
+    CancellationToken ct) =>
+{
+    var workTypes = await handler.ExecuteAsync(ct);
+    return Results.Ok(workTypes);
+})
+.WithName("GetWorkTypes")
+.WithOpenApi()
+.WithTags("RAMS");
+
+// GET /api/assignments - Get user's work assignments
+app.MapGet("/api/assignments", async (
+    string userId,
+    GetWorkAssignmentsHandler handler,
+    CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.BadRequest(new { error = "userId is required" });
+    }
+
+    var assignments = await handler.ExecuteAsync(userId, ct);
+    return Results.Ok(assignments);
+})
+.WithName("GetUserWorkAssignments")
+.WithOpenApi()
+.WithTags("RAMS");
+
+// GET /api/rams/{id} - Get RAMS document with checklist
+app.MapGet("/api/rams/{id}", async (
+    string id,
+    GetRamsDocumentHandler handler,
+    CancellationToken ct) =>
+{
+    var document = await handler.ExecuteAsync(id, ct);
+    
+    if (document == null)
+    {
+        return Results.NotFound(new { error = $"RAMS document {id} not found" });
+    }
+
+    return Results.Ok(document);
+})
+.WithName("GetRamsDocument")
+.WithOpenApi()
+.WithTags("RAMS");
+
+// GET /api/rams/work-type/{workTypeId} - Get active RAMS for work type
+app.MapGet("/api/rams/work-type/{workTypeId}", async (
+    string workTypeId,
+    GetRamsDocumentHandler handler,
+    CancellationToken ct) =>
+{
+    var document = await handler.GetActiveByWorkTypeAsync(workTypeId, ct);
+    
+    if (document == null)
+    {
+        return Results.NotFound(new { 
+            error = $"No active RAMS document found for work type {workTypeId}" 
+        });
+    }
+
+    return Results.Ok(document);
+})
+.WithName("GetRamsDocumentByWorkType")
+.WithOpenApi()
+.WithTags("RAMS");
+
+// POST /api/rams/accept - Submit RAMS acceptance
+app.MapPost("/api/rams/accept", async (
+    RamsAcceptanceRequest request,
+    SubmitRamsAcceptanceHandler handler,
+    CancellationToken ct) =>
+{
+    try
+    {
+        var acceptance = await handler.HandleAsync(request, ct);
+        return Results.Created($"/api/rams/acceptances/{acceptance.Id}", acceptance);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+})
+.WithName("SubmitRamsAcceptance")
+.WithOpenApi()
+.WithTags("RAMS");
+
 app.Run();
 
 // ============================================================================
@@ -181,4 +293,17 @@ public record GeofenceEventRequest(
     string EventType, // "Enter" or "Exit"
     double? Latitude,
     double? Longitude
+);
+
+public record RamsAcceptanceRequest(
+    string UserId,
+    string SiteId,
+    string? WorkAssignmentId,
+    string RamsDocumentId,
+    string SignatureData, // Base64 encoded image
+    string? IpAddress,
+    string? DeviceInfo,
+    double? Latitude,
+    double? Longitude,
+    string? ChecklistResponses // JSON string of checklist item responses
 );
