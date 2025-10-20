@@ -1,4 +1,5 @@
 using Rascor.Application;
+using Rascor.Application.DTOs;
 using Rascor.Domain;
 using Rascor.Domain.Repositories;
 using Rascor.Infrastructure;
@@ -240,30 +241,30 @@ app.MapGet("/api/rams/{id}", async (
 .WithOpenApi()
 .WithTags("RAMS");
 
-// GET /api/rams/work-type/{workTypeId} - Get active RAMS for work type
+// GET /api/rams/work-type/{workTypeId} - Get current RAMS version for work type
 app.MapGet("/api/rams/work-type/{workTypeId}", async (
     string workTypeId,
     GetRamsDocumentHandler handler,
     CancellationToken ct) =>
 {
-    var document = await handler.GetActiveByWorkTypeAsync(workTypeId, ct);
+    var document = await handler.GetCurrentVersionAsync(workTypeId, ct);
     
     if (document == null)
     {
         return Results.NotFound(new { 
-            error = $"No active RAMS document found for work type {workTypeId}" 
+            error = $"No current RAMS document found for work type {workTypeId}" 
         });
     }
 
     return Results.Ok(document);
 })
-.WithName("GetRamsDocumentByWorkType")
+.WithName("GetCurrentRamsDocumentByWorkType")
 .WithOpenApi()
 .WithTags("RAMS");
 
 // POST /api/rams/accept - Submit RAMS acceptance
 app.MapPost("/api/rams/accept", async (
-    RamsAcceptanceRequest request,
+    CreateRamsAcceptanceRequest request,
     SubmitRamsAcceptanceHandler handler,
     CancellationToken ct) =>
 {
@@ -293,17 +294,4 @@ public record GeofenceEventRequest(
     string EventType, // "Enter" or "Exit"
     double? Latitude,
     double? Longitude
-);
-
-public record RamsAcceptanceRequest(
-    string UserId,
-    string SiteId,
-    string? WorkAssignmentId,
-    string RamsDocumentId,
-    string SignatureData, // Base64 encoded image
-    string? IpAddress,
-    string? DeviceInfo,
-    double? Latitude,
-    double? Longitude,
-    string? ChecklistResponses // JSON string of checklist item responses
 );
