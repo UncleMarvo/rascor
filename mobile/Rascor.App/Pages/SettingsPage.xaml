@@ -21,11 +21,11 @@
                     <Label x:Name="UserIdLabel"
                            Text="User ID: Loading..."
                            FontSize="14"
-                           TextColor="Gray" />
+                           TextColor="Black" />
                     <Label x:Name="DeviceIdLabel"
                            Text="Device ID: Loading..."
                            FontSize="14"
-                           TextColor="Gray" />
+                           TextColor="Black" />
                     <Button Text="📋 Copy Device ID"
                             Clicked="OnCopyDeviceIdClicked"
                             BackgroundColor="Gray"
@@ -46,7 +46,7 @@
                     <Label x:Name="PendingItemsLabel"
                            Text="Pending items: 0"
                            FontSize="12"
-                           TextColor="Gray" />
+                           TextColor="Black" />
                     <Button Text="Sync Offline Events"
                             Clicked="OnSyncClicked"
                             BackgroundColor="Orange"
@@ -56,29 +56,34 @@
 
             <!-- App Settings -->
             <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
-                <VerticalStackLayout Spacing="10">
+                <VerticalStackLayout Spacing="15">
                     <Label Text="📱 App Settings" 
                            FontSize="16" 
                            FontAttributes="Bold" />
-                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
-                        <Label Grid.Row="0" Grid.Column="0" 
-                               Text="Enable Notifications" 
+                    
+                    <!-- Notifications Row -->
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Enable Notifications" 
                                FontSize="14"
-                               VerticalOptions="Center" />
-                        <Switch Grid.Row="0" Grid.Column="1" 
-                                x:Name="NotificationsSwitch"
+                               TextColor="Black"
+                               VerticalOptions="Center"
+                               HorizontalOptions="FillAndExpand" />
+                        <Switch x:Name="NotificationsSwitch"
                                 IsToggled="True"
                                 Toggled="OnNotificationsToggled" />
-                        
-                        <Label Grid.Row="1" Grid.Column="0" 
-                               Text="Auto-sync on WiFi only" 
+                    </HorizontalStackLayout>
+                    
+                    <!-- WiFi Only Row -->
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Auto-sync on WiFi only" 
                                FontSize="14"
-                               VerticalOptions="Center" />
-                        <Switch Grid.Row="1" Grid.Column="1" 
-                                x:Name="WiFiOnlySwitch"
+                               TextColor="Black"
+                               VerticalOptions="Center"
+                               HorizontalOptions="FillAndExpand" />
+                        <Switch x:Name="WiFiOnlySwitch"
                                 IsToggled="False"
                                 Toggled="OnWiFiOnlyToggled" />
-                    </Grid>
+                    </HorizontalStackLayout>
                 </VerticalStackLayout>
             </Frame>
 
@@ -91,7 +96,7 @@
                            TextColor="Purple" />
                     <Label Text="For development and testing only" 
                            FontSize="12" 
-                           TextColor="Gray" />
+                           TextColor="Black" />
                     
                     <Button Text="Reset Onboarding"
                             Clicked="OnResetOnboardingClicked"
@@ -129,10 +134,10 @@
                     <Label x:Name="VersionLabel"
                            Text="Version: 1.0.0"
                            FontSize="14"
-                           TextColor="Gray" />
+                           TextColor="Black" />
                     <Label Text="© 2025 RASCOR"
                            FontSize="12"
-                           TextColor="Gray" />
+                           TextColor="Black" />
                 </VerticalStackLayout>
             </Frame>
 
