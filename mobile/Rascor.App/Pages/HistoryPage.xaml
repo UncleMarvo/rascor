@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Rascor.App.Pages.HistoryPage"
+             Title="History">
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="0">
+        
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" Padding="20,20,20,10" Spacing="5">
+            <Label Text="📜 History" 
+                   FontSize="20" 
+                   FontAttributes="Bold" />
+            <Label Text="View your past activity" 
+                   FontSize="14" 
+                   TextColor="Gray" />
+        </VerticalStackLayout>
+
+        <!-- Tab Selector -->
+        <Grid Grid.Row="1" 
+              Padding="20,0" 
+              ColumnDefinitions="*,*" 
+              ColumnSpacing="10"
+              Margin="0,0,0,10">
+            <Button Grid.Column="0"
+                    x:Name="AttendanceTabButton"
+                    Text="Site Attendance"
+                    BackgroundColor="DodgerBlue"
+                    TextColor="White"
+                    Clicked="OnAttendanceTabClicked" />
+            <Button Grid.Column="1"
+                    x:Name="RamsTabButton"
+                    Text="RAMS Signed"
+                    BackgroundColor="LightGray"
+                    TextColor="Black"
+                    Clicked="OnRamsTabClicked" />
+        </Grid>
+
+        <!-- Content Area (switches between tabs) -->
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Padding="20,0,20,20" Spacing="15">
+
+                <!-- Attendance History Container -->
+                <VerticalStackLayout x:Name="AttendanceHistoryContainer" 
+                                     IsVisible="True"
+                                     Spacing="10">
+                    <Label Text="📍 Site Attendance History" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           Margin="0,0,0,10" />
+                    
+                    <!-- Empty State -->
+                    <VerticalStackLayout x:Name="AttendanceEmptyState"
+                                         VerticalOptions="Center"
+                                         HorizontalOptions="Center"
+                                         Spacing="10"
+                                         Padding="0,50">
+                        <Label Text="📭" 
+                               FontSize="48" 
+                               HorizontalOptions="Center" />
+                        <Label Text="No attendance history" 
+                               FontSize="16" 
+                               HorizontalOptions="Center"
+                               TextColor="Gray" />
+                    </VerticalStackLayout>
+
+                    <!-- Attendance items will be added here -->
+                    <VerticalStackLayout x:Name="AttendanceItemsContainer" 
+                                         Spacing="10" />
+                </VerticalStackLayout>
+
+                <!-- RAMS History Container -->
+                <VerticalStackLayout x:Name="RamsHistoryContainer" 
+                                     IsVisible="False"
+                                     Spacing="10">
+                    <Label Text="📋 RAMS Signature History" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           Margin="0,0,0,10" />
+                    
+                    <!-- Empty State -->
+                    <VerticalStackLayout x:Name="RamsEmptyState"
+                                         VerticalOptions="Center"
+                                         HorizontalOptions="Center"
+                                         Spacing="10"
+                                         Padding="0,50">
+                        <Label Text="📭" 
+                               FontSize="48" 
+                               HorizontalOptions="Center" />
+                        <Label Text="No RAMS signatures" 
+                               FontSize="16" 
+                               HorizontalOptions="Center"
+                               TextColor="Gray" />
+                    </VerticalStackLayout>
+
+                    <!-- RAMS items will be added here -->
+                    <VerticalStackLayout x:Name="RamsItemsContainer" 
+                                         Spacing="10" />
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>
