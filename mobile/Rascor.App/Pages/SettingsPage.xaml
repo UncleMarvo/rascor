@@ -3,152 +3,113 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Rascor.App.Pages.SettingsPage"
              Title="Settings">
-
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
 
-            <!-- Header -->
-            <Label Text="⚙️ Settings" 
-                   FontSize="24" 
-                   FontAttributes="Bold" />
-
             <!-- User Info Section -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="👤 User Profile" 
-                           FontSize="16" 
-                           FontAttributes="Bold" />
-                    <Label x:Name="UserIdLabel"
-                           Text="User ID: Loading..."
-                           FontSize="14"
-                           TextColor="Black" />
-                    <Label x:Name="DeviceIdLabel"
-                           Text="Device ID: Loading..."
-                           FontSize="14"
-                           TextColor="Black" />
-                    <Button Text="📋 Copy Device ID"
+                    <Label Text="👤 User Information" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="UserIdLabel" Text="User ID: Loading..." />
+                    <Label x:Name="DeviceIdLabel" Text="Device ID: Loading..." />
+                    <Button Text="Copy Device ID" 
                             Clicked="OnCopyDeviceIdClicked"
-                            BackgroundColor="Gray"
+                            BackgroundColor="LightBlue" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Geofence Status Section -->
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📍 Geofence Status" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="GeofenceStatusLabel" 
+                           Text="Checking status..." 
+                           TextColor="Gray" />
+                    <Button Text="Start Monitoring" 
+                            Clicked="OnStartMonitoringClicked"
+                            BackgroundColor="Green"
+                            TextColor="White" />
+                    <Button Text="Check Current Location" 
+                            Clicked="OnCheckCurrentLocationClicked"
+                            BackgroundColor="Blue"
                             TextColor="White" />
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Sync Section -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
+            <!-- Sync Status Section -->
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="🔄 Sync &amp; Data" 
-                           FontSize="16" 
-                           FontAttributes="Bold" />
-                    <Label x:Name="SyncStatusLabel"
-                           Text="Status: All synced"
-                           FontSize="14"
-                           TextColor="Green" />
-                    <Label x:Name="PendingItemsLabel"
-                           Text="Pending items: 0"
-                           FontSize="12"
-                           TextColor="Black" />
-                    <Button Text="Sync Offline Events"
+                    <Label Text="🔄 Sync Status" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="SyncStatusLabel" Text="Status: Checking..." />
+                    <Label x:Name="PendingItemsLabel" Text="Pending items: 0" />
+                    <Button Text="Sync Offline Events" 
                             Clicked="OnSyncClicked"
                             BackgroundColor="Orange"
                             TextColor="White" />
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- App Settings -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
-                <VerticalStackLayout Spacing="15">
-                    <Label Text="📱 App Settings" 
-                           FontSize="16" 
-                           FontAttributes="Bold" />
+            <!-- App Preferences -->
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="⚙️ Preferences" FontSize="18" FontAttributes="Bold" />
                     
-                    <!-- Notifications Row -->
                     <HorizontalStackLayout Spacing="10">
-                        <Label Text="Enable Notifications" 
-                               FontSize="14"
-                               TextColor="Black"
-                               VerticalOptions="Center"
-                               HorizontalOptions="FillAndExpand" />
-                        <Switch x:Name="NotificationsSwitch"
+                        <Label Text="Enable Notifications" VerticalOptions="Center" HorizontalOptions="StartAndExpand" />
+                        <Switch x:Name="NotificationsSwitch" 
                                 IsToggled="True"
                                 Toggled="OnNotificationsToggled" />
                     </HorizontalStackLayout>
-                    
-                    <!-- WiFi Only Row -->
+
                     <HorizontalStackLayout Spacing="10">
-                        <Label Text="Auto-sync on WiFi only" 
-                               FontSize="14"
-                               TextColor="Black"
-                               VerticalOptions="Center"
-                               HorizontalOptions="FillAndExpand" />
-                        <Switch x:Name="WiFiOnlySwitch"
+                        <Label Text="Sync on WiFi Only" VerticalOptions="Center" HorizontalOptions="StartAndExpand" />
+                        <Switch x:Name="WiFiOnlySwitch" 
                                 IsToggled="False"
                                 Toggled="OnWiFiOnlyToggled" />
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Testing Tools Section (Debug) -->
-            <Frame BorderColor="Purple" CornerRadius="10" Padding="15" HasShadow="True">
+            <!-- Testing Tools Section -->
+            <Frame BorderColor="Orange" CornerRadius="10" Padding="15">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="🔧 Testing Tools" 
-                           FontSize="16" 
-                           FontAttributes="Bold"
-                           TextColor="Purple" />
-                    <Label Text="For development and testing only" 
-                           FontSize="12" 
-                           TextColor="Black" />
+                    <Label Text="🧪 Testing Tools" FontSize="18" FontAttributes="Bold" />
+                    <Label Text="For development and debugging" FontSize="12" TextColor="Gray" />
                     
-                    <Button Text="Reset Onboarding"
-                            Clicked="OnResetOnboardingClicked"
-                            BackgroundColor="Purple"
-                            TextColor="White" />
-                    
-                    <Button Text="Start Monitoring"
-                            Clicked="OnStartMonitoringClicked"
-                            BackgroundColor="Purple"
-                            TextColor="White" />
-                    
-                    <Button Text="🔔 Test Notification"
+                    <Button Text="Test Notification" 
                             Clicked="OnTestNotificationClicked"
                             BackgroundColor="Purple"
                             TextColor="White" />
                     
-                    <Button Text="Simulate Enter Event"
+                    <Button Text="Simulate Site Enter" 
                             Clicked="OnSimulateEnterClicked"
-                            BackgroundColor="Purple"
+                            BackgroundColor="Green"
                             TextColor="White" />
                     
-                    <Button Text="Simulate Exit Event"
+                    <Button Text="Simulate Site Exit" 
                             Clicked="OnSimulateExitClicked"
-                            BackgroundColor="Purple"
+                            BackgroundColor="Red"
+                            TextColor="White" />
+                    
+                    <Button Text="Reset Onboarding" 
+                            Clicked="OnResetOnboardingClicked"
+                            BackgroundColor="Gray"
                             TextColor="White" />
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- About Section -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
+            <!-- App Info Section -->
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="ℹ️ About" 
-                           FontSize="16" 
-                           FontAttributes="Bold" />
-                    <Label x:Name="VersionLabel"
-                           Text="Version: 1.0.0"
-                           FontSize="14"
-                           TextColor="Black" />
-                    <Label Text="© 2025 RASCOR"
-                           FontSize="12"
-                           TextColor="Black" />
+                    <Label Text="ℹ️ App Information" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="VersionLabel" Text="Version: Loading..." />
+                    <Button Text="Logout" 
+                            Clicked="OnLogoutClicked"
+                            BackgroundColor="DarkRed"
+                            TextColor="White" />
                 </VerticalStackLayout>
             </Frame>
-
-            <!-- Logout Button -->
-            <Button Text="🚪 Logout"
-                    Clicked="OnLogoutClicked"
-                    BackgroundColor="Red"
-                    TextColor="White"
-                    Margin="0,10,0,20" />
 
         </VerticalStackLayout>
     </ScrollView>
-
 </ContentPage>
