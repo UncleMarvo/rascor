@@ -8,17 +8,17 @@ public partial class SettingsPage : ContentPage
 {
     private readonly ILogger<SettingsPage> _logger;
     private readonly ConfigService _configService;
-    private readonly IGeofenceService _geofenceService;
+    private readonly DeviceIdentityService _deviceIdentity;
 
     public SettingsPage(
         ILogger<SettingsPage> logger,
         ConfigService configService,
-        IGeofenceService geofenceService)
+        DeviceIdentityService deviceIdentity)
     {
         InitializeComponent();
         _logger = logger;
         _configService = configService;
-        _geofenceService = geofenceService;
+        _deviceIdentity = deviceIdentity;
         
         LoadSettings();
     }
@@ -31,9 +31,9 @@ public partial class SettingsPage : ContentPage
 
     private void LoadSettings()
     {
-        // Load user info
-        UserIdLabel.Text = $"User ID: {_configService.Config?.UserId ?? "Not set"}";
-        DeviceIdLabel.Text = $"Device ID: {_configService.Config?.DeviceId ?? "Not set"}";
+        // Load user info from DeviceIdentityService
+        UserIdLabel.Text = $"User ID: {_configService.CurrentUserId}";
+        DeviceIdLabel.Text = $"Device ID: {_deviceIdentity.GetDeviceId()}";
         
         // Load sync status
         UpdateSyncStatus();
@@ -68,7 +68,7 @@ public partial class SettingsPage : ContentPage
 
     private async void OnCopyDeviceIdClicked(object sender, EventArgs e)
     {
-        var deviceId = _configService.Config?.DeviceId ?? "Not set";
+        var deviceId = _deviceIdentity.GetDeviceId();
         await Clipboard.SetTextAsync(deviceId);
         await DisplayAlert("Copied", $"Device ID copied to clipboard", "OK");
     }
@@ -117,8 +117,7 @@ public partial class SettingsPage : ContentPage
     {
         try
         {
-            await _configService.InitializeAsync("user-demo");
-            await _geofenceService.StartMonitoringAsync();
+            await _configService.InitializeAsync();
             await DisplayAlert("Success", "Geofence monitoring started", "OK");
         }
         catch (Exception ex)
@@ -146,9 +145,25 @@ public partial class SettingsPage : ContentPage
     {
         try
         {
-            // TODO: Simulate geofence enter event
-            _logger.LogInformation("Simulating ENTER event");
-            await DisplayAlert("Simulated", "Enter event triggered", "OK");
+            var site = _configService.Sites.FirstOrDefault();
+            if (site == null)
+            {
+                await DisplayAlert("Error", "No sites configured. Run 'Start Monitoring' first.", "OK");
+                return;
+            }
+
+            _logger.LogInformation("Simulating ENTER event for site: {SiteId}", site.Id);
+            var success = await _configService.SimulateGeofenceEventAsync(
+                site.Id, 
+                "Enter", 
+                site.Latitude, 
+                site.Longitude
+            );
+
+            if (success)
+                await DisplayAlert("Success", $"Simulated ENTER event for {site.Name}", "OK");
+            else
+                await DisplayAlert("Queued", $"Event queued for sync (offline)", "OK");
         }
         catch (Exception ex)
         {
@@ -161,9 +176,25 @@ public partial class SettingsPage : ContentPage
     {
         try
         {
-            // TODO: Simulate geofence exit event
-            _logger.LogInformation("Simulating EXIT event");
-            await DisplayAlert("Simulated", "Exit event triggered", "OK");
+            var site = _configService.Sites.FirstOrDefault();
+            if (site == null)
+            {
+                await DisplayAlert("Error", "No sites configured. Run 'Start Monitoring' first.", "OK");
+                return;
+            }
+
+            _logger.LogInformation("Simulating EXIT event for site: {SiteId}", site.Id);
+            var success = await _configService.SimulateGeofenceEventAsync(
+                site.Id, 
+                "Exit", 
+                site.Latitude, 
+                site.Longitude
+            );
+
+            if (success)
+                await DisplayAlert("Success", $"Simulated EXIT event for {site.Name}", "OK");
+            else
+                await DisplayAlert("Queued", $"Event queued for sync (offline)", "OK");
         }
         catch (Exception ex)
         {
