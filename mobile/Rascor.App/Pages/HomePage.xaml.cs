@@ -84,17 +84,29 @@ public partial class HomePage : ContentPage
     {
         try
         {
-            // Get current location
-            var location = await _gpsManager.GetLastReading();
+            // Get current location from Shiny GPS
+            var lastReading = _gpsManager.GetLastReading();
             
-            if (location == null)
+            GpsReading? reading = null;
+            if (lastReading == null)
             {
-                // Try to get a fresh reading
-                var reading = await _gpsManager.GetCurrentPosition(TimeSpan.FromSeconds(10));
-                location = reading;
+                // Try to get a fresh reading with CancellationToken
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                try
+                {
+                    reading = await _gpsManager.GetCurrentPosition(new GpsRequest(), cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogWarning("GPS timeout - no location available");
+                }
+            }
+            else
+            {
+                reading = lastReading;
             }
 
-            if (location == null)
+            if (reading == null)
             {
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
@@ -124,8 +136,8 @@ public partial class HomePage : ContentPage
             foreach (var site in sites)
             {
                 var distance = CalculateDistance(
-                    location.Position.Latitude,
-                    location.Position.Longitude,
+                    reading.Position.Latitude,
+                    reading.Position.Longitude,
                     site.Latitude,
                     site.Longitude
                 );

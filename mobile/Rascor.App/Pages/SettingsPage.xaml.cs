@@ -57,12 +57,13 @@ public partial class SettingsPage : ContentPage
         LoadSettings();
     }
 
-    private async void UpdateGeofenceStatus()
+    private void UpdateGeofenceStatus()
     {
         try
         {
-            var monitoredRegions = await _geofenceManager.GetMonitorRegions();
-            var count = monitoredRegions?.Count() ?? 0;
+            // GetMonitorRegions() returns IList<GeofenceRegion> synchronously
+            var monitoredRegions = _geofenceManager.GetMonitorRegions();
+            var count = monitoredRegions?.Count ?? 0;
             var siteCount = _configService.Sites.Count;
 
             if (count > 0)
@@ -196,8 +197,21 @@ public partial class SettingsPage : ContentPage
             button.IsEnabled = false;
             button.Text = "Checking...";
 
-            // Get current location
-            var reading = await _gpsManager.GetCurrentPosition(TimeSpan.FromSeconds(10));
+            // Get current location with CancellationToken
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            GpsReading? reading = null;
+            
+            try
+            {
+                reading = await _gpsManager.GetCurrentPosition(new GpsRequest(), cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                await DisplayAlert("Location", "GPS timeout. Could not get current location. Check GPS permissions and signal.", "OK");
+                button.Text = "Check Current Location";
+                button.IsEnabled = true;
+                return;
+            }
             
             if (reading == null)
             {
@@ -209,7 +223,7 @@ public partial class SettingsPage : ContentPage
 
             var lat = reading.Position.Latitude;
             var lon = reading.Position.Longitude;
-            var accuracy = reading.PositionAccuracy;
+            var accuracy = reading.PositionAccuracy ?? 0;
 
             // Check if inside any site
             var sites = _configService.Sites;
