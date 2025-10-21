@@ -42,10 +42,16 @@ public static class MauiProgram
         // Register Shiny geofencing service wrapper
         builder.Services.AddSingleton<IGeofenceService, Services.ShinyGeofenceService>();
 
-        // Register pages
-        builder.Services.AddTransient<MainPage>();
+        // Register pages - new tab-based structure
+        builder.Services.AddTransient<MainPage>(); // Keep for now (legacy)
         builder.Services.AddTransient<OnboardingPage>();
         builder.Services.AddTransient<PermissionGuidePage>();
+        
+        // New tab pages
+        builder.Services.AddTransient<HomePage>();
+        builder.Services.AddTransient<MyWorkPage>();
+        builder.Services.AddTransient<HistoryPage>();
+        builder.Services.AddTransient<SettingsPage>();
 
         return builder.Build();
     }
