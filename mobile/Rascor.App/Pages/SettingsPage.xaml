@@ -36,7 +36,7 @@
             <!-- Sync Section -->
             <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="🔄 Sync & Data" 
+                    <Label Text="🔄 Sync &amp; Data" 
                            FontSize="16" 
                            FontAttributes="Bold" />
                     <Label x:Name="SyncStatusLabel"
