@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Rascor.App.Core;
 using Rascor.App.Services;
 using Shiny.Locations;
-using System.Reactive.Linq;
 
 namespace Rascor.App.Pages;
 
@@ -198,30 +197,12 @@ public partial class SettingsPage : ContentPage
             button.IsEnabled = false;
             button.Text = "Checking...";
 
-            // Try to get current location using Shiny observable pattern
-            GpsReading? reading = null;
-            
-            try
-            {
-                // Get location with 10 second timeout
-                var readingTask = _gpsManager.WhenReading()
-                    .Take(1)
-                    .Timeout(TimeSpan.FromSeconds(10))
-                    .ToTask();
-                
-                reading = await readingTask;
-            }
-            catch (TimeoutException)
-            {
-                await DisplayAlert("Location", "GPS timeout. Could not get current location. Check GPS permissions and signal.", "OK");
-                button.Text = "Check Current Location";
-                button.IsEnabled = true;
-                return;
-            }
+            // Try to get current location
+            var reading = await GetCurrentLocationAsync();
             
             if (reading == null)
             {
-                await DisplayAlert("Location", "Could not get current location. Check GPS permissions.", "OK");
+                await DisplayAlert("Location", "Could not get current location. Check GPS permissions and signal.", "OK");
                 button.Text = "Check Current Location";
                 button.IsEnabled = true;
                 return;
@@ -229,7 +210,7 @@ public partial class SettingsPage : ContentPage
 
             var lat = reading.Position.Latitude;
             var lon = reading.Position.Longitude;
-            var accuracy = reading.PositionAccuracy.GetValueOrDefault(0);
+            var accuracy = reading.PositionAccuracy;
 
             // Check if inside any site
             var sites = _configService.Sites;
@@ -293,6 +274,42 @@ public partial class SettingsPage : ContentPage
             _logger.LogError(ex, "Failed to check current location");
             await DisplayAlert("Error", $"Failed to get location: {ex.Message}", "OK");
         }
+    }
+
+    private Task<GpsReading?> GetCurrentLocationAsync()
+    {
+        var tcs = new TaskCompletionSource<GpsReading?>();
+        var timeout = Task.Delay(10000); // 10 second timeout
+        IDisposable? subscription = null;
+
+        subscription = _gpsManager.WhenReading().Subscribe(
+            reading =>
+            {
+                if (reading != null)
+                {
+                    tcs.TrySetResult(reading);
+                    subscription?.Dispose();
+                }
+            },
+            error =>
+            {
+                tcs.TrySetException(error);
+                subscription?.Dispose();
+            }
+        );
+
+        // Race between getting a reading and timeout
+        Task.Run(async () =>
+        {
+            await timeout;
+            if (!tcs.Task.IsCompleted)
+            {
+                tcs.TrySetResult(null);
+                subscription?.Dispose();
+            }
+        });
+
+        return tcs.Task;
     }
 
     private async void OnTestNotificationClicked(object sender, EventArgs e)

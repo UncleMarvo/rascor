@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Rascor.App.Services;
 using Shiny.Locations;
-using System.Reactive.Linq;
 
 namespace Rascor.App.Pages;
 
@@ -86,26 +85,12 @@ public partial class HomePage : ContentPage
         try
         {
             // Get last known location from Shiny GPS
-            var lastReading = _gpsManager.GetLastReading();
-            
-            GpsReading? reading = lastReading;
+            var reading = _gpsManager.GetLastReading();
             
             if (reading == null)
             {
-                // Try to get a fresh reading using observable pattern with timeout
-                try
-                {
-                    var readingTask = _gpsManager.WhenReading()
-                        .Take(1)
-                        .Timeout(TimeSpan.FromSeconds(10))
-                        .ToTask();
-                    
-                    reading = await readingTask;
-                }
-                catch (TimeoutException)
-                {
-                    _logger.LogWarning("GPS timeout - no location available");
-                }
+                // No cached location - try to get fresh one
+                reading = await GetCurrentLocationAsync();
             }
 
             if (reading == null)
@@ -186,6 +171,42 @@ public partial class HomePage : ContentPage
                 CheckInTimeLabel.IsVisible = false;
             });
         }
+    }
+
+    private Task<GpsReading?> GetCurrentLocationAsync()
+    {
+        var tcs = new TaskCompletionSource<GpsReading?>();
+        var timeout = Task.Delay(10000); // 10 second timeout
+        IDisposable? subscription = null;
+
+        subscription = _gpsManager.WhenReading().Subscribe(
+            reading =>
+            {
+                if (reading != null)
+                {
+                    tcs.TrySetResult(reading);
+                    subscription?.Dispose();
+                }
+            },
+            error =>
+            {
+                tcs.TrySetException(error);
+                subscription?.Dispose();
+            }
+        );
+
+        // Race between getting a reading and timeout
+        Task.Run(async () =>
+        {
+            await timeout;
+            if (!tcs.Task.IsCompleted)
+            {
+                tcs.TrySetResult(null);
+                subscription?.Dispose();
+            }
+        });
+
+        return tcs.Task;
     }
 
     private void UpdateWorkAssignments()
