@@ -22,8 +22,8 @@ public partial class OnboardingPage : ContentPage
             // Mark onboarding as complete
             Preferences.Set("OnboardingCompleted", true);
             
-            // Navigate to main page
-            await Shell.Current.GoToAsync("//MainPage");
+            // Navigate back to the root (dismisses the modal)
+            await Shell.Current.GoToAsync("..");
         }
         catch (Exception ex)
         {
