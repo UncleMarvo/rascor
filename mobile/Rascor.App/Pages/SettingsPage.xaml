@@ -2,26 +2,28 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Rascor.App.Pages.SettingsPage"
-             Title="Settings">
+             Title="Settings"
+             BackgroundColor="White">
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
 
             <!-- User Info Section -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" BackgroundColor="White">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="👤 User Information" FontSize="18" FontAttributes="Bold" />
-                    <Label x:Name="UserIdLabel" Text="User ID: Loading..." />
-                    <Label x:Name="DeviceIdLabel" Text="Device ID: Loading..." />
+                    <Label Text="👤 User Information" FontSize="18" FontAttributes="Bold" TextColor="Black" />
+                    <Label x:Name="UserIdLabel" Text="User ID: Loading..." TextColor="Black" />
+                    <Label x:Name="DeviceIdLabel" Text="Device ID: Loading..." TextColor="Black" />
                     <Button Text="Copy Device ID" 
                             Clicked="OnCopyDeviceIdClicked"
-                            BackgroundColor="LightBlue" />
+                            BackgroundColor="LightBlue"
+                            TextColor="Black" />
                 </VerticalStackLayout>
             </Frame>
 
             <!-- Geofence Status Section -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" BackgroundColor="White">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="📍 Geofence Status" FontSize="18" FontAttributes="Bold" />
+                    <Label Text="📍 Geofence Status" FontSize="18" FontAttributes="Bold" TextColor="Black" />
                     <Label x:Name="GeofenceStatusLabel" 
                            Text="Checking status..." 
                            TextColor="Gray" />
@@ -37,11 +39,11 @@
             </Frame>
 
             <!-- Sync Status Section -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" BackgroundColor="White">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="🔄 Sync Status" FontSize="18" FontAttributes="Bold" />
-                    <Label x:Name="SyncStatusLabel" Text="Status: Checking..." />
-                    <Label x:Name="PendingItemsLabel" Text="Pending items: 0" />
+                    <Label Text="🔄 Sync Status" FontSize="18" FontAttributes="Bold" TextColor="Black" />
+                    <Label x:Name="SyncStatusLabel" Text="Status: Checking..." TextColor="Black" />
+                    <Label x:Name="PendingItemsLabel" Text="Pending items: 0" TextColor="Black" />
                     <Button Text="Sync Offline Events" 
                             Clicked="OnSyncClicked"
                             BackgroundColor="Orange"
@@ -50,19 +52,19 @@
             </Frame>
 
             <!-- App Preferences -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" BackgroundColor="White">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="⚙️ Preferences" FontSize="18" FontAttributes="Bold" />
+                    <Label Text="⚙️ Preferences" FontSize="18" FontAttributes="Bold" TextColor="Black" />
                     
                     <HorizontalStackLayout Spacing="10">
-                        <Label Text="Enable Notifications" VerticalOptions="Center" HorizontalOptions="StartAndExpand" />
+                        <Label Text="Enable Notifications" VerticalOptions="Center" HorizontalOptions="StartAndExpand" TextColor="Black" />
                         <Switch x:Name="NotificationsSwitch" 
                                 IsToggled="True"
                                 Toggled="OnNotificationsToggled" />
                     </HorizontalStackLayout>
 
                     <HorizontalStackLayout Spacing="10">
-                        <Label Text="Sync on WiFi Only" VerticalOptions="Center" HorizontalOptions="StartAndExpand" />
+                        <Label Text="Sync on WiFi Only" VerticalOptions="Center" HorizontalOptions="StartAndExpand" TextColor="Black" />
                         <Switch x:Name="WiFiOnlySwitch" 
                                 IsToggled="False"
                                 Toggled="OnWiFiOnlyToggled" />
@@ -71,9 +73,9 @@
             </Frame>
 
             <!-- Testing Tools Section -->
-            <Frame BorderColor="Orange" CornerRadius="10" Padding="15">
+            <Frame BorderColor="Orange" CornerRadius="10" Padding="15" BackgroundColor="White">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="🧪 Testing Tools" FontSize="18" FontAttributes="Bold" />
+                    <Label Text="🧪 Testing Tools" FontSize="18" FontAttributes="Bold" TextColor="Black" />
                     <Label Text="For development and debugging" FontSize="12" TextColor="Gray" />
                     
                     <Button Text="Test Notification" 
@@ -99,10 +101,10 @@
             </Frame>
 
             <!-- App Info Section -->
-            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15">
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" BackgroundColor="White">
                 <VerticalStackLayout Spacing="10">
-                    <Label Text="ℹ️ App Information" FontSize="18" FontAttributes="Bold" />
-                    <Label x:Name="VersionLabel" Text="Version: Loading..." />
+                    <Label Text="ℹ️ App Information" FontSize="18" FontAttributes="Bold" TextColor="Black" />
+                    <Label x:Name="VersionLabel" Text="Version: Loading..." TextColor="Black" />
                     <Button Text="Logout" 
                             Clicked="OnLogoutClicked"
                             BackgroundColor="DarkRed"

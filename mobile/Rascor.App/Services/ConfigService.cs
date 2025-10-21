@@ -37,11 +37,15 @@ public class ConfigService
         var userId = _deviceIdentity.GetUserId();
         _logger.LogWarning("🔑 Initializing for user ID: {UserId}", userId);
         
+        // FIRST: Clear ALL existing geofences to prevent stale data
+        _logger.LogInformation("🧹 Clearing all existing geofences before initialization");
+        await _geofenceService.UnregisterAllGeofencesAsync();
+        
         // Request permissions
         var granted = await _geofenceService.RequestPermissionsAsync();
         if (!granted)
         {
-            throw new InvalidOperationException("Location permissions not granted");
+            throw new InvalidOperationException("Location permissions not granted. Please enable 'Allow all the time' in Settings.");
         }
 
         // Fetch config and sites for actual user ID

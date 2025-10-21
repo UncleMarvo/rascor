@@ -154,24 +154,31 @@ public partial class SettingsPage : ContentPage
 
     private async void OnStartMonitoringClicked(object sender, EventArgs e)
     {
+        var button = (Button)sender;
+        button.IsEnabled = false;
+        button.Text = "Starting...";
+
         try
         {
-            var button = (Button)sender;
-            button.IsEnabled = false;
-            button.Text = "Starting...";
-
+            _logger.LogInformation("🚀 Start Monitoring clicked - beginning initialization");
+            
             await _configService.InitializeAsync();
+            
+            _logger.LogInformation("✅ Initialization complete, updating UI");
             UpdateGeofenceStatus();
-
-            button.Text = "Start Monitoring";
-            button.IsEnabled = true;
             
             await DisplayAlert("Success", "Geofence monitoring started successfully", "OK");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to start monitoring");
-            await DisplayAlert("Error", $"Failed to start monitoring: {ex.Message}", "OK");
+            _logger.LogError(ex, "❌ Failed to start monitoring");
+            await DisplayAlert("Error", $"Failed to start monitoring:\n\n{ex.Message}", "OK");
+        }
+        finally
+        {
+            // ALWAYS reset button state, even if exception occurred
+            button.Text = "Start Monitoring";
+            button.IsEnabled = true;
         }
     }
 

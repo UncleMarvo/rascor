@@ -22,26 +22,30 @@ public partial class HomePage : ContentPage
         _configService = configService;
         _gpsManager = gpsManager;
         
-        // Subscribe to GPS updates
-        _gpsSubscription = _gpsManager.WhenReading().Subscribe(reading =>
-        {
-            _lastReading = reading;
-            MainThread.BeginInvokeOnMainThread(() => UpdateLocationStatus());
-        });
-        
         LoadDashboard();
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        
+        // Re-subscribe to GPS if not already subscribed
+        if (_gpsSubscription == null)
+        {
+            _gpsSubscription = _gpsManager.WhenReading().Subscribe(reading =>
+            {
+                _lastReading = reading;
+                MainThread.BeginInvokeOnMainThread(() => UpdateLocationStatus());
+            });
+        }
+        
         RefreshDashboard();
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        _gpsSubscription?.Dispose();
+        // Don't dispose - keep subscription alive across tab switches
     }
 
     private void LoadDashboard()
