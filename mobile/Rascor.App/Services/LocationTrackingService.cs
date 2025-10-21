@@ -18,6 +18,7 @@ public class LocationTrackingService
     private readonly Dictionary<string, bool> _currentSiteStatus = new(); // Track which sites user is inside
     private List<Site> _sites = new();
     private Position? _lastLoggedPosition;
+    private GpsReading? _lastReading;
     private const double MinimumLogDistanceMeters = 10; // Only log if moved 10+ meters
 
     public LocationTrackingService(
@@ -44,12 +45,76 @@ public class LocationTrackingService
     }
 
     /// <summary>
+    /// Get the site the user is currently inside (if any)
+    /// </summary>
+    public Site? GetCurrentSite()
+    {
+        if (_lastReading == null || _sites.Count == 0)
+            return null;
+
+        foreach (var site in _sites)
+        {
+            var distance = CalculateDistance(
+                _lastReading.Position.Latitude,
+                _lastReading.Position.Longitude,
+                site.Latitude,
+                site.Longitude
+            );
+
+            if (distance <= site.RadiusMeters)
+                return site;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Get distance to nearest site and site name
+    /// </summary>
+    public (string siteName, double distance)? GetNearestSiteInfo()
+    {
+        if (_lastReading == null || _sites.Count == 0)
+            return null;
+
+        string? nearestSite = null;
+        double nearestDistance = double.MaxValue;
+
+        foreach (var site in _sites)
+        {
+            var distance = CalculateDistance(
+                _lastReading.Position.Latitude,
+                _lastReading.Position.Longitude,
+                site.Latitude,
+                site.Longitude
+            );
+
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestSite = site.Name;
+            }
+        }
+
+        return nearestSite != null ? (nearestSite, nearestDistance) : null;
+    }
+
+    /// <summary>
     /// Start active location tracking for faster updates
     /// </summary>
     public async Task<bool> StartTrackingAsync()
     {
         try
         {
+            // Check if already running
+            var currentStatus = await _gpsManager.GetCurrentStatus();
+            if (currentStatus == GpsStatus.Listening)
+            {
+                _logger.LogInformation("✅ GPS listener already running - subscribing to updates");
+                // Just subscribe to existing updates
+                _gpsManager.WhenReading().Subscribe(OnLocationUpdate);
+                return true;
+            }
+
             // Create GPS request with 2-minute intervals
             var request = new GpsRequest
             {
@@ -72,6 +137,13 @@ public class LocationTrackingService
             await _gpsManager.StartListener(request);
 
             _logger.LogWarning("✅ Location tracking started - checking every ~2 minutes for faster detection");
+            return true;
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already a GPS listener"))
+        {
+            // GPS already running - just subscribe
+            _logger.LogInformation("✅ GPS listener already running - subscribing to updates");
+            _gpsManager.WhenReading().Subscribe(OnLocationUpdate);
             return true;
         }
         catch (Exception ex)
@@ -104,6 +176,9 @@ public class LocationTrackingService
     {
         try
         {
+            // Store last reading for GetCurrentSite()
+            _lastReading = reading;
+
             if (_sites.Count == 0)
             {
                 return; // Silently skip if no sites configured

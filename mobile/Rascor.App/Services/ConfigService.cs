@@ -45,36 +45,36 @@ public class ConfigService
         var granted = await _geofenceService.RequestPermissionsAsync();
         if (!granted)
         {
-            throw new InvalidOperationException("Location permissions not granted. Please enable 'Allow all the time' in Settings.");
+            throw new InvalidOperationException(
+                "Location permissions not granted.\n\n" +
+                "Please enable 'Allow all the time' in Android Settings:\n" +
+                "Settings > Apps > RASCOR > Permissions > Location"
+            );
         }
 
         // Fetch config and sites for actual user ID
         _logger.LogInformation("📡 Fetching sites for user: {UserId}", userId);
         var bootstrap = await _api.GetConfigAsync(userId);
         
-        if (bootstrap != null && bootstrap.Sites.Count > 0)
+        if (bootstrap == null || bootstrap.Sites.Count == 0)
         {
-            _logger.LogWarning("✅ Found {Count} sites assigned to user {UserId}", bootstrap.Sites.Count, userId);
-            Config = bootstrap.Config;
-            Sites = bootstrap.Sites;
+            // PRODUCTION: No fallback - fail with clear instructions
+            var errorMessage = 
+                $"No sites assigned to device ID: {userId}\n\n" +
+                $"Database Assignment Required:\n" +
+                $"Run this SQL on your backend database:\n\n" +
+                $"UPDATE user_site_assignments\n" +
+                $"SET user_id = '{userId}'\n" +
+                $"WHERE site_id IN ('site-001', 'site-002');\n\n" +
+                $"Replace site IDs with your actual sites.";
+            
+            _logger.LogError("❌ {ErrorMessage}", errorMessage);
+            throw new InvalidOperationException(errorMessage);
         }
-        else
-        {
-            // No sites found for this device - use demo fallback
-            _logger.LogWarning("⚠️ No sites assigned to user {UserId}. Using demo user as fallback.", userId);
-            _logger.LogWarning("💡 To assign sites: UPDATE user_site_assignments SET user_id = '{UserId}' WHERE site_id IN ('site-XXX', ...);", userId);
-            
-            bootstrap = await _api.GetConfigAsync("user-demo");
-            
-            if (bootstrap == null || bootstrap.Sites.Count == 0)
-            {
-                throw new InvalidOperationException($"No sites assigned to device {userId}. Please contact admin to assign sites.");
-            }
-            
-            _logger.LogInformation("✅ Using demo user sites for testing ({Count} sites)", bootstrap.Sites.Count);
-            Config = bootstrap.Config;
-            Sites = bootstrap.Sites;
-        }
+        
+        _logger.LogWarning("✅ Found {Count} sites assigned to user {UserId}", bootstrap.Sites.Count, userId);
+        Config = bootstrap.Config;
+        Sites = bootstrap.Sites;
 
         // Register geofences (passive background monitoring)
         await _geofenceService.RegisterGeofencesAsync(Sites);

@@ -8,19 +8,17 @@ public partial class HomePage : ContentPage
 {
     private readonly ILogger<HomePage> _logger;
     private readonly ConfigService _configService;
-    private readonly IGpsManager _gpsManager;
-    private GpsReading? _lastReading;
-    private IDisposable? _gpsSubscription;
+    private readonly LocationTrackingService _locationTracking;
 
     public HomePage(
         ILogger<HomePage> logger,
         ConfigService configService,
-        IGpsManager gpsManager)
+        LocationTrackingService locationTracking)
     {
         InitializeComponent();
         _logger = logger;
         _configService = configService;
-        _gpsManager = gpsManager;
+        _locationTracking = locationTracking;
         
         LoadDashboard();
     }
@@ -28,24 +26,7 @@ public partial class HomePage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        
-        // Re-subscribe to GPS if not already subscribed
-        if (_gpsSubscription == null)
-        {
-            _gpsSubscription = _gpsManager.WhenReading().Subscribe(reading =>
-            {
-                _lastReading = reading;
-                MainThread.BeginInvokeOnMainThread(() => UpdateLocationStatus());
-            });
-        }
-        
         RefreshDashboard();
-    }
-
-    protected override void OnDisappearing()
-    {
-        base.OnDisappearing();
-        // Don't dispose - keep subscription alive across tab switches
     }
 
     private void LoadDashboard()
@@ -72,60 +53,40 @@ public partial class HomePage : ContentPage
     {
         try
         {
-            // Use the last reading from our subscription
-            var reading = _lastReading;
-            
-            if (reading == null)
-            {
-                LocationLabel.Text = "Location unavailable";
-                CheckInTimeLabel.IsVisible = false;
-                return;
-            }
-
             var sites = _configService.Sites;
+            
             if (sites.Count == 0)
             {
-                LocationLabel.Text = "No sites configured";
+                LocationLabel.Text = "No sites configured - run Start Monitoring";
+                LocationLabel.TextColor = Colors.Gray;
                 CheckInTimeLabel.IsVisible = false;
                 return;
             }
 
-            // Check if inside any site
-            string? currentSiteName = null;
-            double closestDistance = double.MaxValue;
-
-            foreach (var site in sites)
+            // Get current location from LocationTrackingService
+            var currentSite = _locationTracking.GetCurrentSite();
+            
+            if (currentSite != null)
             {
-                var distance = CalculateDistance(
-                    reading.Position.Latitude,
-                    reading.Position.Longitude,
-                    site.Latitude,
-                    site.Longitude
-                );
-
-                if (distance <= site.RadiusMeters)
-                {
-                    currentSiteName = site.Name;
-                    break;
-                }
-
-                if (distance < closestDistance)
-                {
-                    closestDistance = distance;
-                }
-            }
-
-            if (currentSiteName != null)
-            {
-                LocationLabel.Text = $"📍 At: {currentSiteName}";
+                LocationLabel.Text = $"📍 At: {currentSite.Name}";
                 LocationLabel.TextColor = Colors.Green;
                 CheckInTimeLabel.Text = $"Last update: {DateTime.Now:HH:mm}";
                 CheckInTimeLabel.IsVisible = true;
             }
             else
             {
-                LocationLabel.Text = $"Not at any site (closest: {closestDistance:F0}m)";
-                LocationLabel.TextColor = Colors.Orange;
+                // Get distance to nearest site
+                var nearestInfo = _locationTracking.GetNearestSiteInfo();
+                if (nearestInfo != null)
+                {
+                    LocationLabel.Text = $"Not at any site (nearest: {nearestInfo.Value.distance:F0}m to {nearestInfo.Value.siteName})";
+                    LocationLabel.TextColor = Colors.Orange;
+                }
+                else
+                {
+                    LocationLabel.Text = "Location unavailable - waiting for GPS";
+                    LocationLabel.TextColor = Colors.Gray;
+                }
                 CheckInTimeLabel.IsVisible = false;
             }
         }
@@ -133,6 +94,7 @@ public partial class HomePage : ContentPage
         {
             _logger.LogError(ex, "Failed to update location status");
             LocationLabel.Text = "Location error";
+            LocationLabel.TextColor = Colors.Red;
             CheckInTimeLabel.IsVisible = false;
         }
     }
@@ -178,18 +140,4 @@ public partial class HomePage : ContentPage
         
         await DisplayAlert("Sync Complete", "All data synced successfully", "OK");
     }
-
-    private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double EarthRadiusMeters = 6371000;
-        var dLat = ToRadians(lat2 - lat1);
-        var dLon = ToRadians(lon2 - lon1);
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
-                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        return EarthRadiusMeters * c;
-    }
-
-    private double ToRadians(double degrees) => degrees * Math.PI / 180.0;
 }
