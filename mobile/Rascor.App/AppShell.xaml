@@ -8,22 +8,22 @@
     <!-- Tab Bar Navigation -->
     <TabBar>
         <!-- Home Tab -->
-        <Tab Title="Home" Icon="home.png">
+        <Tab Title="Home">
             <ShellContent ContentTemplate="{DataTemplate pages:HomePage}" />
         </Tab>
 
         <!-- My Work Tab -->
-        <Tab Title="Work" Icon="work.png">
+        <Tab Title="Work">
             <ShellContent ContentTemplate="{DataTemplate pages:MyWorkPage}" />
         </Tab>
 
         <!-- History Tab -->
-        <Tab Title="History" Icon="history.png">
+        <Tab Title="History">
             <ShellContent ContentTemplate="{DataTemplate pages:HistoryPage}" />
         </Tab>
 
         <!-- Settings Tab -->
-        <Tab Title="Settings" Icon="settings.png">
+        <Tab Title="Settings">
             <ShellContent ContentTemplate="{DataTemplate pages:SettingsPage}" />
         </Tab>
     </TabBar>
