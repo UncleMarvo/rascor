@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Rascor.App.Pages.SettingsPage"
+             Title="Settings">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Header -->
+            <Label Text="⚙️ Settings" 
+                   FontSize="24" 
+                   FontAttributes="Bold" />
+
+            <!-- User Info Section -->
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="👤 User Profile" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+                    <Label x:Name="UserIdLabel"
+                           Text="User ID: Loading..."
+                           FontSize="14"
+                           TextColor="Gray" />
+                    <Label x:Name="DeviceIdLabel"
+                           Text="Device ID: Loading..."
+                           FontSize="14"
+                           TextColor="Gray" />
+                    <Button Text="📋 Copy Device ID"
+                            Clicked="OnCopyDeviceIdClicked"
+                            BackgroundColor="Gray"
+                            TextColor="White" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Sync Section -->
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="🔄 Sync & Data" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+                    <Label x:Name="SyncStatusLabel"
+                           Text="Status: All synced"
+                           FontSize="14"
+                           TextColor="Green" />
+                    <Label x:Name="PendingItemsLabel"
+                           Text="Pending items: 0"
+                           FontSize="12"
+                           TextColor="Gray" />
+                    <Button Text="Sync Offline Events"
+                            Clicked="OnSyncClicked"
+                            BackgroundColor="Orange"
+                            TextColor="White" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- App Settings -->
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📱 App Settings" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                        <Label Grid.Row="0" Grid.Column="0" 
+                               Text="Enable Notifications" 
+                               FontSize="14"
+                               VerticalOptions="Center" />
+                        <Switch Grid.Row="0" Grid.Column="1" 
+                                x:Name="NotificationsSwitch"
+                                IsToggled="True"
+                                Toggled="OnNotificationsToggled" />
+                        
+                        <Label Grid.Row="1" Grid.Column="0" 
+                               Text="Auto-sync on WiFi only" 
+                               FontSize="14"
+                               VerticalOptions="Center" />
+                        <Switch Grid.Row="1" Grid.Column="1" 
+                                x:Name="WiFiOnlySwitch"
+                                IsToggled="False"
+                                Toggled="OnWiFiOnlyToggled" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Testing Tools Section (Debug) -->
+            <Frame BorderColor="Purple" CornerRadius="10" Padding="15" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="🔧 Testing Tools" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           TextColor="Purple" />
+                    <Label Text="For development and testing only" 
+                           FontSize="12" 
+                           TextColor="Gray" />
+                    
+                    <Button Text="Start Monitoring"
+                            Clicked="OnStartMonitoringClicked"
+                            BackgroundColor="Purple"
+                            TextColor="White" />
+                    
+                    <Button Text="🔔 Test Notification"
+                            Clicked="OnTestNotificationClicked"
+                            BackgroundColor="Purple"
+                            TextColor="White" />
+                    
+                    <Button Text="Simulate Enter Event"
+                            Clicked="OnSimulateEnterClicked"
+                            BackgroundColor="Purple"
+                            TextColor="White" />
+                    
+                    <Button Text="Simulate Exit Event"
+                            Clicked="OnSimulateExitClicked"
+                            BackgroundColor="Purple"
+                            TextColor="White" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- About Section -->
+            <Frame BorderColor="LightGray" CornerRadius="10" Padding="15" HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="ℹ️ About" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+                    <Label x:Name="VersionLabel"
+                           Text="Version: 1.0.0"
+                           FontSize="14"
+                           TextColor="Gray" />
+                    <Label Text="© 2025 RASCOR"
+                           FontSize="12"
+                           TextColor="Gray" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Logout Button -->
+            <Button Text="🚪 Logout"
+                    Clicked="OnLogoutClicked"
+                    BackgroundColor="Red"
+                    TextColor="White"
+                    Margin="0,10,0,20" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
