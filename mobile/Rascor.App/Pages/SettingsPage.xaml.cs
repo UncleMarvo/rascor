@@ -113,6 +113,12 @@ public partial class SettingsPage : ContentPage
 
     // ========== Testing Tools (from old MainPage) ==========
 
+    private async void OnResetOnboardingClicked(object sender, EventArgs e)
+    {
+        Preferences.Remove("OnboardingCompleted");
+        await DisplayAlert("Reset", "Onboarding has been reset. Restart the app to see it again.", "OK");
+    }
+
     private async void OnStartMonitoringClicked(object sender, EventArgs e)
     {
         try
