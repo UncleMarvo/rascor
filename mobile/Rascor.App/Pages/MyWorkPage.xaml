@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Rascor.App.Pages.MyWorkPage"
+             Title="My Work">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="0">
+        
+        <!-- Header Section -->
+        <VerticalStackLayout Grid.Row="0" Padding="20,20,20,10" Spacing="5">
+            <Label Text="📋 Active Work Assignments" 
+                   FontSize="20" 
+                   FontAttributes="Bold" />
+            <Label x:Name="SubtitleLabel"
+                   Text="Select work to view RAMS" 
+                   FontSize="14" 
+                   TextColor="Gray" />
+        </VerticalStackLayout>
+
+        <!-- Work Assignments List -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout x:Name="WorkAssignmentsContainer" 
+                                 Padding="20,0,20,20" 
+                                 Spacing="15">
+                
+                <!-- Empty State (shown when no work) -->
+                <VerticalStackLayout x:Name="EmptyStateContainer"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="10"
+                                     Padding="0,50">
+                    <Label Text="📭" 
+                           FontSize="48" 
+                           HorizontalOptions="Center" />
+                    <Label Text="No active work assignments" 
+                           FontSize="16" 
+                           HorizontalOptions="Center"
+                           TextColor="Gray" />
+                    <Label Text="Check back later or contact your supervisor" 
+                           FontSize="12" 
+                           HorizontalOptions="Center"
+                           TextColor="Gray" />
+                </VerticalStackLayout>
+
+                <!-- Work items will be dynamically added here -->
+                
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Bottom Actions -->
+        <VerticalStackLayout Grid.Row="2" 
+                             Padding="20" 
+                             Spacing="10"
+                             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#1E1E1E}">
+            <Button Text="🗺️ Manual Site Check-In"
+                    BackgroundColor="DodgerBlue"
+                    TextColor="White"
+                    Clicked="OnManualCheckInClicked" />
+            <Button Text="🔄 Refresh Work"
+                    BackgroundColor="Gray"
+                    TextColor="White"
+                    Clicked="OnRefreshWorkClicked" />
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>
