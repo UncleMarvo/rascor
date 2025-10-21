@@ -90,6 +90,9 @@ builder.Services.AddScoped<SubmitRamsAcceptanceHandler>();
 var app = builder.Build();
 
 // Initialize database and seed data (with error handling for production)
+// Only seed if ENABLE_DATABASE_SEED environment variable is set to "true"
+var shouldSeed = builder.Configuration.GetValue<string>("ENABLE_DATABASE_SEED")?.ToLowerInvariant() == "true";
+
 try
 {
     using (var scope = app.Services.CreateScope())
@@ -102,10 +105,20 @@ try
         // Apply any pending migrations
         await db.Database.MigrateAsync();
         
-        scopeLogger.LogInformation("Database migration complete. Seeding data...");
+        scopeLogger.LogInformation("Database migration complete.");
         
-        // Seed initial data
-        await DbInitializer.SeedAsync(db);
+        // Seed initial data only if enabled
+        if (shouldSeed)
+        {
+            scopeLogger.LogInformation("ENABLE_DATABASE_SEED is set to 'true'. Seeding data...");
+            await DbInitializer.SeedAsync(db);
+            scopeLogger.LogInformation("Database seeding complete!");
+        }
+        else
+        {
+            scopeLogger.LogInformation("Database seeding skipped (ENABLE_DATABASE_SEED not set to 'true').");
+            scopeLogger.LogInformation("To enable seeding, set the ENABLE_DATABASE_SEED environment variable to 'true'.");
+        }
         
         scopeLogger.LogInformation("Database initialization complete!");
     }
