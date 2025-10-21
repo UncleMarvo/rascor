@@ -19,6 +19,7 @@ public class LocationTrackingService
     private List<Site> _sites = new();
     private Position? _lastLoggedPosition;
     private GpsReading? _lastReading;
+    private bool _isListening = false;
     private const double MinimumLogDistanceMeters = 10; // Only log if moved 10+ meters
 
     public LocationTrackingService(
@@ -105,16 +106,6 @@ public class LocationTrackingService
     {
         try
         {
-            // Check if already running
-            var currentStatus = await _gpsManager.GetCurrentStatus();
-            if (currentStatus == GpsStatus.Listening)
-            {
-                _logger.LogInformation("✅ GPS listener already running - subscribing to updates");
-                // Just subscribe to existing updates
-                _gpsManager.WhenReading().Subscribe(OnLocationUpdate);
-                return true;
-            }
-
             // Create GPS request with 2-minute intervals
             var request = new GpsRequest
             {
@@ -133,17 +124,20 @@ public class LocationTrackingService
             // Start listening to location updates
             _gpsManager.WhenReading().Subscribe(OnLocationUpdate);
 
-            // Start GPS tracking with 2-minute check interval
-            await _gpsManager.StartListener(request);
+            // Try to start GPS tracking
+            try
+            {
+                await _gpsManager.StartListener(request);
+                _isListening = true;
+                _logger.LogWarning("✅ Location tracking started - checking every ~2 minutes for faster detection");
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("already a GPS listener"))
+            {
+                // GPS already running - that's fine, we're subscribed to updates
+                _isListening = true;
+                _logger.LogInformation("✅ GPS listener already running - subscribed to updates");
+            }
 
-            _logger.LogWarning("✅ Location tracking started - checking every ~2 minutes for faster detection");
-            return true;
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("already a GPS listener"))
-        {
-            // GPS already running - just subscribe
-            _logger.LogInformation("✅ GPS listener already running - subscribing to updates");
-            _gpsManager.WhenReading().Subscribe(OnLocationUpdate);
             return true;
         }
         catch (Exception ex)
@@ -160,8 +154,12 @@ public class LocationTrackingService
     {
         try
         {
-            await _gpsManager.StopListener();
-            _logger.LogInformation("Location tracking stopped");
+            if (_isListening)
+            {
+                await _gpsManager.StopListener();
+                _isListening = false;
+                _logger.LogInformation("Location tracking stopped");
+            }
         }
         catch (Exception ex)
         {
