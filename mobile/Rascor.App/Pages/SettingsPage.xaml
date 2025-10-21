@@ -93,6 +93,11 @@
                            FontSize="12" 
                            TextColor="Gray" />
                     
+                    <Button Text="Reset Onboarding"
+                            Clicked="OnResetOnboardingClicked"
+                            BackgroundColor="Purple"
+                            TextColor="White" />
+                    
                     <Button Text="Start Monitoring"
                             Clicked="OnStartMonitoringClicked"
                             BackgroundColor="Purple"
