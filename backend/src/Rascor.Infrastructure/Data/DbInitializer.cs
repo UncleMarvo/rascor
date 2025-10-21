@@ -33,6 +33,20 @@ public static class DbInitializer
                     Latitude: 51.8985,
                     Longitude: -8.4756,
                     RadiusMeters: 120
+                ),
+                new Site(
+                    Id: "site-004",
+                    Name: "Wexford Home",
+                    Latitude: 52.5103567,
+                    Longitude: -6.5767854,
+                    RadiusMeters: 50
+                ),
+                new Site(
+                    Id: "site-005",
+                    Name: "Wexford GreenTechHQ",
+                    Latitude: 52.4930494,
+                    Longitude: -6.5640803,
+                    RadiusMeters: 150
                 )
             };
 
@@ -43,7 +57,9 @@ public static class DbInitializer
             {
                 new UserAssignment("user-demo", "site-001", DateTimeOffset.UtcNow),
                 new UserAssignment("user-demo", "site-002", DateTimeOffset.UtcNow),
-                new UserAssignment("user-demo", "site-003", DateTimeOffset.UtcNow)
+                new UserAssignment("user-demo", "site-003", DateTimeOffset.UtcNow),
+                new UserAssignment("user-demo", "site-004", DateTimeOffset.UtcNow),
+                new UserAssignment("user-demo", "site-005", DateTimeOffset.UtcNow)
             };
 
             db.Assignments.AddRange(assignments);
