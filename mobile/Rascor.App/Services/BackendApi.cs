@@ -9,8 +9,8 @@ public class BackendApi
     private readonly HttpClient _http;
     private readonly ILogger<BackendApi> _logger;
 
-    // Azure backend URL - deployed and working!
-    private const string BaseUrl = "https://Rascor-api-1411956859.azurewebsites.net";
+    // Use existing Azure backend URL (siteattendance deployment)
+    private const string BaseUrl = "https://siteattendance-api-1411956859.azurewebsites.net";
 
     public BackendApi(ILogger<BackendApi> logger)
     {
