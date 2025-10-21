@@ -9,6 +9,8 @@ public partial class HomePage : ContentPage
     private readonly ILogger<HomePage> _logger;
     private readonly ConfigService _configService;
     private readonly IGpsManager _gpsManager;
+    private GpsReading? _lastReading;
+    private IDisposable? _gpsSubscription;
 
     public HomePage(
         ILogger<HomePage> logger,
@@ -20,6 +22,13 @@ public partial class HomePage : ContentPage
         _configService = configService;
         _gpsManager = gpsManager;
         
+        // Subscribe to GPS updates
+        _gpsSubscription = _gpsManager.WhenReading().Subscribe(reading =>
+        {
+            _lastReading = reading;
+            MainThread.BeginInvokeOnMainThread(() => UpdateLocationStatus());
+        });
+        
         LoadDashboard();
     }
 
@@ -27,6 +36,12 @@ public partial class HomePage : ContentPage
     {
         base.OnAppearing();
         RefreshDashboard();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        _gpsSubscription?.Dispose();
     }
 
     private void LoadDashboard()
@@ -53,8 +68,8 @@ public partial class HomePage : ContentPage
     {
         try
         {
-            // Simply get last known GPS reading (already tracked by LocationTrackingService)
-            var reading = _gpsManager.GetLastReading();
+            // Use the last reading from our subscription
+            var reading = _lastReading;
             
             if (reading == null)
             {
