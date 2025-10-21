@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Rascor.App.Core;
 using Rascor.App.Services;
 using Shiny.Locations;
+using System.Reactive.Linq;
 
 namespace Rascor.App.Pages;
 
@@ -197,15 +198,20 @@ public partial class SettingsPage : ContentPage
             button.IsEnabled = false;
             button.Text = "Checking...";
 
-            // Get current location with CancellationToken
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            // Try to get current location using Shiny observable pattern
             GpsReading? reading = null;
             
             try
             {
-                reading = await _gpsManager.GetCurrentPosition(new GpsRequest(), cts.Token);
+                // Get location with 10 second timeout
+                var readingTask = _gpsManager.WhenReading()
+                    .Take(1)
+                    .Timeout(TimeSpan.FromSeconds(10))
+                    .ToTask();
+                
+                reading = await readingTask;
             }
-            catch (OperationCanceledException)
+            catch (TimeoutException)
             {
                 await DisplayAlert("Location", "GPS timeout. Could not get current location. Check GPS permissions and signal.", "OK");
                 button.Text = "Check Current Location";
@@ -223,7 +229,7 @@ public partial class SettingsPage : ContentPage
 
             var lat = reading.Position.Latitude;
             var lon = reading.Position.Longitude;
-            var accuracy = reading.PositionAccuracy ?? 0;
+            var accuracy = reading.PositionAccuracy.GetValueOrDefault(0);
 
             // Check if inside any site
             var sites = _configService.Sites;

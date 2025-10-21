@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Rascor.App.Services;
 using Shiny.Locations;
+using System.Reactive.Linq;
 
 namespace Rascor.App.Pages;
 
@@ -84,26 +85,27 @@ public partial class HomePage : ContentPage
     {
         try
         {
-            // Get current location from Shiny GPS
+            // Get last known location from Shiny GPS
             var lastReading = _gpsManager.GetLastReading();
             
-            GpsReading? reading = null;
-            if (lastReading == null)
+            GpsReading? reading = lastReading;
+            
+            if (reading == null)
             {
-                // Try to get a fresh reading with CancellationToken
-                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                // Try to get a fresh reading using observable pattern with timeout
                 try
                 {
-                    reading = await _gpsManager.GetCurrentPosition(new GpsRequest(), cts.Token);
+                    var readingTask = _gpsManager.WhenReading()
+                        .Take(1)
+                        .Timeout(TimeSpan.FromSeconds(10))
+                        .ToTask();
+                    
+                    reading = await readingTask;
                 }
-                catch (OperationCanceledException)
+                catch (TimeoutException)
                 {
                     _logger.LogWarning("GPS timeout - no location available");
                 }
-            }
-            else
-            {
-                reading = lastReading;
             }
 
             if (reading == null)
