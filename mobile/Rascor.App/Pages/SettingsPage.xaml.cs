@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Rascor.App.Core;
 using Rascor.App.Services;
 
 namespace Rascor.App.Pages;
@@ -7,12 +8,12 @@ public partial class SettingsPage : ContentPage
 {
     private readonly ILogger<SettingsPage> _logger;
     private readonly ConfigService _configService;
-    private readonly GeofenceService _geofenceService;
+    private readonly IGeofenceService _geofenceService;
 
     public SettingsPage(
         ILogger<SettingsPage> logger,
         ConfigService configService,
-        GeofenceService geofenceService)
+        IGeofenceService geofenceService)
     {
         InitializeComponent();
         _logger = logger;
