@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Rascor.App.Pages.HomePage"
+             Title="Home">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+
+            <!-- Greeting Header -->
+            <Label 
+                x:Name="GreetingLabel"
+                Text="Good morning! 👋"
+                FontSize="24"
+                FontAttributes="Bold"
+                Margin="0,10,0,20" />
+
+            <!-- Current Location Widget -->
+            <Frame BorderColor="LightGray" 
+                   CornerRadius="10" 
+                   Padding="15"
+                   HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📍 Current Location" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+                    <Label x:Name="LocationLabel"
+                           Text="Not at any site"
+                           FontSize="14"
+                           TextColor="Gray" />
+                    <Label x:Name="CheckInTimeLabel"
+                           Text=""
+                           FontSize="12"
+                           TextColor="Gray" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Action Required Widget -->
+            <Frame BorderColor="Orange" 
+                   CornerRadius="10" 
+                   Padding="15"
+                   HasShadow="True"
+                   x:Name="ActionRequiredFrame"
+                   IsVisible="False">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="⚠️ Action Required" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           TextColor="Orange" />
+                    <Label x:Name="ActionRequiredLabel"
+                           Text="No actions required"
+                           FontSize="14" />
+                    <Button Text="Sign Now"
+                            BackgroundColor="Orange"
+                            TextColor="White"
+                            Clicked="OnSignNowClicked"
+                            IsVisible="False"
+                            x:Name="SignNowButton" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Today's Work Widget -->
+            <Frame BorderColor="LightGray" 
+                   CornerRadius="10" 
+                   Padding="15"
+                   HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📋 Today's Work" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+                    <Label x:Name="TodaysWorkLabel"
+                           Text="Loading work assignments..."
+                           FontSize="14"
+                           TextColor="Gray" />
+                    <!-- Work items will be dynamically added here -->
+                    <VerticalStackLayout x:Name="WorkItemsContainer" 
+                                         Spacing="5" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Sync Status Widget -->
+            <Frame BorderColor="LightGray" 
+                   CornerRadius="10" 
+                   Padding="15"
+                   HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="🔄 Sync Status" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label x:Name="SyncStatusLabel"
+                               Text="All synced"
+                               FontSize="14"
+                               TextColor="Green"
+                               VerticalOptions="Center" />
+                        <Button Text="Sync Now"
+                                FontSize="12"
+                                Padding="10,5"
+                                Clicked="OnSyncNowClicked"
+                                x:Name="SyncButton" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Quick Stats Widget -->
+            <Frame BorderColor="LightGray" 
+                   CornerRadius="10" 
+                   Padding="15"
+                   HasShadow="True">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📊 This Week" 
+                           FontSize="16" 
+                           FontAttributes="Bold" />
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="5">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Sites visited:" FontSize="12" TextColor="Gray" />
+                        <Label Grid.Row="0" Grid.Column="1" x:Name="SitesVisitedLabel" Text="0" FontSize="12" FontAttributes="Bold" HorizontalOptions="End" />
+                        <Label Grid.Row="1" Grid.Column="0" Text="RAMS signed:" FontSize="12" TextColor="Gray" />
+                        <Label Grid.Row="1" Grid.Column="1" x:Name="RamsSignedLabel" Text="0" FontSize="12" FontAttributes="Bold" HorizontalOptions="End" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
