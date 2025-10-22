@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rascor.App", "mobile\Rascor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rascor.App.Core", "mobile\Rascor.App.Core\Rascor.App.Core.csproj", "{66666666-6666-6666-6666-666666666666}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rascore.Api", "backend\src\Rascor.Api\Rascore.Api.csproj", "{D6E878C8-2C87-6384-07BA-CDC8CD42EFA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rascor.Api", "backend\src\Rascor.Api\Rascor.Api.csproj", "{D6E878C8-2C87-6384-07BA-CDC8CD42EFA7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rascor.Application", "backend\src\Rascor.Application\Rascor.Application.csproj", "{0500C5C4-703D-BF9E-07E8-18FDB6C3506C}"
 EndProject

@@ -63,7 +63,7 @@ public class ConfigService
                 $"No sites assigned to device ID: {userId}\n\n" +
                 $"Database Assignment Required:\n" +
                 $"Run this SQL on your backend database:\n\n" +
-                $"UPDATE user_site_assignments\n" +
+                $"UPDATE public.assignments\n" +
                 $"SET user_id = '{userId}'\n" +
                 $"WHERE site_id IN ('site-001', 'site-002');\n\n" +
                 $"Replace site IDs with your actual sites.";
