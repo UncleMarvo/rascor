@@ -1,12 +1,12 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+#pragma warning disable CA1416
+
+using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
-using Rascor.App.Configuration;
 using Rascor.App.Core;
+using Rascor.App.Core.Services;
 using Rascor.App.Pages;
 using Rascor.App.Services;
 using Shiny;
-using System.Reflection;
 
 namespace Rascor.App;
 
@@ -18,20 +18,14 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
+        #if ANDROID || IOS || MACCATALYST || WINDOWS
+            .UseMauiCommunityToolkit()
+        #endif
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
-
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("Rascor.App.appsettings.json");
-
-        var config = new ConfigurationBuilder()
-            .AddJsonStream(stream!)
-            .Build();
-
-        builder.Configuration.AddConfiguration(config);
 
         // Configure Shiny for background services, geofencing, GPS, and notifications
         builder.UseShiny();
@@ -40,9 +34,6 @@ public static class MauiProgram
         builder.Services.AddGeofencing<Services.RascorGeofenceDelegate>();
         builder.Services.AddGps(); // Add GPS tracking
         builder.Services.AddNotifications();
-
-        builder.Services.Configure<ApiSettings>(
-            builder.Configuration.GetSection("ApiSettings"));
 
 #if DEBUG
         builder.Logging.AddDebug();
@@ -69,6 +60,10 @@ public static class MauiProgram
         builder.Services.AddTransient<MyWorkPage>();
         builder.Services.AddTransient<HistoryPage>();
         builder.Services.AddTransient<SettingsPage>();
+
+        builder.Services.AddSingleton<GeofenceStateService>();
+
+        builder.Services.AddSingleton<RamsPhotoService>();
 
         return builder.Build();
     }

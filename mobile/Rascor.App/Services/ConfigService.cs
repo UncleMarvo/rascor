@@ -53,7 +53,7 @@ public class ConfigService
         }
 
         // Fetch config and sites for actual user ID
-        _logger.LogInformation("📡 Fetching sites for user: {UserId}", userId);
+        _logger.LogInformation("Fetching sites for user: {UserId}", userId);
         var bootstrap = await _api.GetConfigAsync(userId);
         
         if (bootstrap == null || bootstrap.Sites.Count == 0)
@@ -72,7 +72,7 @@ public class ConfigService
             throw new InvalidOperationException(errorMessage);
         }
         
-        _logger.LogWarning("✅ Found {Count} sites assigned to user {UserId}", bootstrap.Sites.Count, userId);
+        _logger.LogWarning("Found {Count} sites assigned to user {UserId}", bootstrap.Sites.Count, userId);
         Config = bootstrap.Config;
         Sites = bootstrap.Sites;
 

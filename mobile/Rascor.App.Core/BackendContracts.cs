@@ -9,7 +9,8 @@ public record Site(
     string Name,
     double Latitude,
     double Longitude,
-    int RadiusMeters
+    int AutoTriggerRadiusMeters,
+    int ManualTriggerRadiusMeters
 );
 
 public record RemoteConfig(

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Rascor.Domain;
+using Rascor.Domain.Entities;
 using Rascor.Infrastructure.Data;
 
 namespace Rascor.Infrastructure.Repositories;
@@ -28,5 +29,13 @@ public class EfSiteRepository : ISiteRepository
     {
         _db.Sites.Add(site);
         await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<List<Site>> GetSitesByDeviceIdAsync(string userId)
+    {
+        // For now, return all sites
+        // TODO: Filter by device assignments when UserAssignment entity is added
+
+        return await _db.Sites.ToListAsync();
     }
 }

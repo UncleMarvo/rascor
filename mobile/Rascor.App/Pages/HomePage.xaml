@@ -16,31 +16,77 @@
                 Margin="0,10,0,20" />
 
             <!-- Current Location Widget -->
-            <Frame BorderColor="LightGray" 
-                   CornerRadius="10" 
-                   Padding="15"
-                   HasShadow="True">
+            <Border>
                 <VerticalStackLayout Spacing="10">
                     <Label Text="📍 Current Location" 
                            FontSize="16" 
-                           FontAttributes="Bold" />
+                           FontAttributes="Bold"
+                           TextColor="Black" />
+                    
                     <Label x:Name="LocationLabel"
                            Text="Not at any site"
                            FontSize="14"
                            TextColor="Gray" />
+                    
                     <Label x:Name="CheckInTimeLabel"
                            Text=""
                            FontSize="12"
-                           TextColor="Gray" />
+                           TextColor="Gray"
+                           IsVisible="False"/>
+
+                    <!-- Warning Label (when away from site while checked in) -->
+                    <Label x:Name="WarningLabel"
+                       Text=""
+                       FontSize="14"
+                       TextColor="#FF9800"
+                       IsVisible="False"/>
+
+                    <!-- Manual Check-In Button -->
+                    <Button x:Name="CheckInButton"
+                        Text="🎯 Check In to Site"
+                        Clicked="OnCheckInClicked"
+                        BackgroundColor="#4CAF50"
+                        TextColor="White"
+                        IsVisible="False"
+                        Margin="0,8,0,0"/>
+
+                    <!-- Manual Check-Out Button -->
+                    <Button x:Name="CheckOutButton"
+                        Text="📤 Check Out"
+                        Clicked="OnCheckOutClicked"
+                        BackgroundColor="#FF5722"
+                        TextColor="White"
+                        IsVisible="False"
+                        Margin="0,8,0,0"/>
+
+                    <!-- Loading Indicator -->
+                    <ActivityIndicator x:Name="LoadingIndicator"
+                          IsRunning="False"
+                          IsVisible="False"
+                          Color="{StaticResource Primary}"/>
+
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
+
+            <Border>
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="📷 RAMS Capture" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           TextColor="Black" />
+                    <Button x:Name="TakeRamsPhotoButton"
+                        Text="📷 Take RAMS Photo"
+                        Clicked="OnTakeRamsPhotoClicked"
+                        BackgroundColor="#2196F3"
+                        TextColor="White"
+                        IsVisible="False"
+                        Margin="0,8,0,0"/>
+
+                </VerticalStackLayout>
+            </Border>
 
             <!-- Action Required Widget -->
-            <Frame BorderColor="Orange" 
-                   CornerRadius="10" 
-                   Padding="15"
-                   HasShadow="True"
-                   x:Name="ActionRequiredFrame"
+            <!--<Border x:Name="ActionRequiredFrame"
                    IsVisible="False">
                 <VerticalStackLayout Spacing="10">
                     <Label Text="⚠️ Action Required" 
@@ -57,36 +103,32 @@
                             IsVisible="False"
                             x:Name="SignNowButton" />
                 </VerticalStackLayout>
-            </Frame>
+            </Border>-->
 
             <!-- Today's Work Widget -->
-            <Frame BorderColor="LightGray" 
-                   CornerRadius="10" 
-                   Padding="15"
-                   HasShadow="True">
+            <!--<Border>
                 <VerticalStackLayout Spacing="10">
                     <Label Text="📋 Today's Work" 
                            FontSize="16" 
-                           FontAttributes="Bold" />
+                           FontAttributes="Bold"
+                           TextColor="Black" />
                     <Label x:Name="TodaysWorkLabel"
                            Text="Loading work assignments..."
                            FontSize="14"
                            TextColor="Gray" />
-                    <!-- Work items will be dynamically added here -->
+                    --><!-- Work items will be dynamically added here --><!--
                     <VerticalStackLayout x:Name="WorkItemsContainer" 
                                          Spacing="5" />
                 </VerticalStackLayout>
-            </Frame>
+            </Border>-->
 
             <!-- Sync Status Widget -->
-            <Frame BorderColor="LightGray" 
-                   CornerRadius="10" 
-                   Padding="15"
-                   HasShadow="True">
+            <!--<Border>
                 <VerticalStackLayout Spacing="10">
                     <Label Text="🔄 Sync Status" 
                            FontSize="16" 
-                           FontAttributes="Bold" />
+                           FontAttributes="Bold"
+                           TextColor="Black" />
                     <HorizontalStackLayout Spacing="10">
                         <Label x:Name="SyncStatusLabel"
                                Text="All synced"
@@ -100,17 +142,15 @@
                                 x:Name="SyncButton" />
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>-->
 
             <!-- Quick Stats Widget -->
-            <Frame BorderColor="LightGray" 
-                   CornerRadius="10" 
-                   Padding="15"
-                   HasShadow="True">
+            <!--<Border>
                 <VerticalStackLayout Spacing="10">
                     <Label Text="📊 This Week" 
                            FontSize="16" 
-                           FontAttributes="Bold" />
+                           FontAttributes="Bold"
+                           TextColor="Black" />
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="5">
                         <Label Grid.Row="0" Grid.Column="0" Text="Sites visited:" FontSize="12" TextColor="Gray" />
                         <Label Grid.Row="0" Grid.Column="1" x:Name="SitesVisitedLabel" Text="0" FontSize="12" FontAttributes="Bold" HorizontalOptions="End" />
@@ -118,7 +158,7 @@
                         <Label Grid.Row="1" Grid.Column="1" x:Name="RamsSignedLabel" Text="0" FontSize="12" FontAttributes="Bold" HorizontalOptions="End" />
                     </Grid>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>-->
 
         </VerticalStackLayout>
     </ScrollView>

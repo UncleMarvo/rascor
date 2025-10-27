@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
-using Shiny.Locations;
 using Rascor.App.Core;
+using Rascor.App.Core.Services;
+using Shiny.Locations;
 
 namespace Rascor.App.Services;
 
@@ -10,6 +11,9 @@ namespace Rascor.App.Services;
 /// </summary>
 public class LocationTrackingService
 {
+    public event EventHandler<GpsReading>? LocationUpdated;
+    public event EventHandler? GeofenceStateChanged;
+
     private readonly IGpsManager _gpsManager;
     private readonly EventQueueService _eventQueue;
     private readonly LocalNotificationService _notificationService;
@@ -22,18 +26,23 @@ public class LocationTrackingService
     private bool _isListening = false;
     private const double MinimumLogDistanceMeters = 10; // Only log if moved 10+ meters
 
+    private readonly GeofenceStateService _stateService;
+
     public LocationTrackingService(
         IGpsManager gpsManager,
         EventQueueService eventQueue,
         LocalNotificationService notificationService,
         DeviceIdentityService deviceIdentity,
-        ILogger<LocationTrackingService> logger)
+        ILogger<LocationTrackingService> logger,
+        GeofenceStateService stateService)
     {
         _gpsManager = gpsManager;
         _eventQueue = eventQueue;
         _notificationService = notificationService;
         _deviceIdentity = deviceIdentity;
         _logger = logger;
+        _stateService = stateService;
+
     }
 
     /// <summary>
@@ -62,7 +71,7 @@ public class LocationTrackingService
                 site.Longitude
             );
 
-            if (distance <= site.RadiusMeters)
+            if (distance <= site.AutoTriggerRadiusMeters)
                 return site;
         }
 
@@ -177,6 +186,9 @@ public class LocationTrackingService
             // Store last reading for GetCurrentSite()
             _lastReading = reading;
 
+            // FIRE THE EVENT
+            LocationUpdated?.Invoke(this, reading);
+
             if (_sites.Count == 0)
             {
                 return; // Silently skip if no sites configured
@@ -209,7 +221,7 @@ public class LocationTrackingService
                 );
 
                 var wasInside = _currentSiteStatus.GetValueOrDefault(site.Id, false);
-                var isInside = distance <= site.RadiusMeters;
+                var isInside = distance <= site.AutoTriggerRadiusMeters;
 
                 // Detect transition
                 if (isInside && !wasInside)
@@ -256,6 +268,12 @@ public class LocationTrackingService
                     ? $"You entered {site.Name}"
                     : $"You entered {site.Name} - will sync when online"
             );
+
+            // UPDATE STATE SERVICE
+            _stateService.SetCheckedIn(site.Id);
+
+            // FIRE THE EVENT
+            GeofenceStateChanged?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
@@ -285,6 +303,12 @@ public class LocationTrackingService
                     ? $"You exited {site.Name}"
                     : $"You exited {site.Name} - will sync when online"
             );
+
+            // UPDATE STATE SERVICE
+            _stateService.SetNotAtSite();
+
+            // FIRE THE EVENT
+            GeofenceStateChanged?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {

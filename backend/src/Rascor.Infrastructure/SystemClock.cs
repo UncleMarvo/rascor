@@ -1,4 +1,5 @@
 using Rascor.Domain;
+using Rascor.Domain.Entities;
 
 namespace Rascor.Infrastructure;
 

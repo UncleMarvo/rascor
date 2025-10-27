@@ -1,11 +1,12 @@
+﻿using Microsoft.EntityFrameworkCore;
 using Rascor.Application;
 using Rascor.Application.DTOs;
+using Rascor.Application.Services;
 using Rascor.Domain;
 using Rascor.Domain.Repositories;
 using Rascor.Infrastructure;
 using Rascor.Infrastructure.Data;
 using Rascor.Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,10 @@ builder.Services.AddSingleton<IClock, SystemClock>();
 // Get connection string - Azure App Service connection strings are automatically added to Configuration
 // They appear as ConnectionStrings:DefaultConnection
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+
+Console.WriteLine($"🔍 Connection String: {connectionString}");
+Console.WriteLine($"🔍 Connection String Length: {connectionString?.Length}");
 
 // Log what we found (without exposing password)
 var logger = builder.Logging.Services.BuildServiceProvider().GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
@@ -86,6 +91,18 @@ builder.Services.AddScoped<GetWorkTypesHandler>();
 builder.Services.AddScoped<GetWorkAssignmentsHandler>();
 builder.Services.AddScoped<GetRamsDocumentHandler>();
 builder.Services.AddScoped<SubmitRamsAcceptanceHandler>();
+builder.Services.AddScoped<IRamsPhotoRepository, EfRamsPhotoRepository>();
+
+builder.Services.AddScoped<RamsPhotoService>(sp =>
+{
+    var repository = sp.GetRequiredService<IRamsPhotoRepository>();
+    var logger = sp.GetRequiredService<ILogger<RamsPhotoService>>();
+    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "rams-photos");
+    return new RamsPhotoService(repository, logger, uploadsDir);
+});
+
+// Manual Checks
+builder.Services.AddScoped<IGeofenceService, GeofenceService>();
 
 var app = builder.Build();
 
@@ -294,6 +311,198 @@ app.MapPost("/api/rams/accept", async (
 .WithName("SubmitRamsAcceptance")
 .WithOpenApi()
 .WithTags("RAMS");
+
+
+// ============================================================================
+// RAMS PHOTO ENDPOINTS
+// ============================================================================
+app.MapPost("/api/rams-photos/upload", async (
+    HttpRequest request,
+    RamsPhotoService photoService,
+    ILogger<Program> logger) =>
+{
+    try
+    {
+        var form = await request.ReadFormAsync();
+
+        var userId = form["userId"].ToString();
+        var siteId = form["siteId"].ToString();
+        var capturedAtStr = form["capturedAt"].ToString();
+        var file = form.Files["photo"];
+
+        if (file == null || file.Length == 0)
+        {
+            return Results.BadRequest(new { success = false, message = "No file uploaded" });
+        }
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(siteId))
+        {
+            return Results.BadRequest(new { success = false, message = "Missing userId or siteId" });
+        }
+
+        // Parse captured date
+        if (!DateTime.TryParse(capturedAtStr, out var capturedAt))
+        {
+            capturedAt = DateTime.UtcNow;
+        }
+
+        // Delegate to service
+        using var stream = file.OpenReadStream();
+        var result = await photoService.UploadPhotoAsync(
+            userId,
+            siteId,
+            capturedAt,
+            stream,
+            file.FileName,
+            file.Length
+        );
+
+        if (result.Success)
+        {
+            return Results.Ok(new
+            {
+                success = true,
+                message = result.Message,
+                photoId = result.PhotoId,
+                uploadedAt = result.UploadedAt
+            });
+        }
+        else
+        {
+            return Results.BadRequest(new { success = false, message = result.Message });
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to upload RAMS photo");
+        return Results.StatusCode(500);
+    }
+})
+.WithName("UploadRamsPhoto")
+.DisableAntiforgery()
+.WithOpenApi();
+
+// Get RAMS photos for a user
+app.MapGet("/api/rams-photos/user/{userId}", async (
+    string userId,
+    RamsPhotoService photoService) =>
+{
+    try
+    {
+        var photos = await photoService.GetUserPhotosAsync(userId);
+
+        return Results.Ok(photos.Select(p => new
+        {
+            p.Id,
+            p.SiteId,
+            p.CapturedAt,
+            p.UploadedAt,
+            p.FileSizeBytes,
+            p.OriginalFilename
+        }));
+    }
+    catch (Exception ex)
+    {
+        return Results.StatusCode(500);
+    }
+})
+.WithName("GetUserRamsPhotos")
+.WithOpenApi();
+
+// Get RAMS photos for a site
+app.MapGet("/api/rams-photos/site/{siteId}", async (
+    string siteId,
+    RamsPhotoService photoService) =>
+{
+    try
+    {
+        var photos = await photoService.GetSitePhotosAsync(siteId);
+
+        return Results.Ok(photos.Select(p => new
+        {
+            p.Id,
+            p.UserId,
+            p.CapturedAt,
+            p.UploadedAt,
+            p.FileSizeBytes,
+            p.OriginalFilename
+        }));
+    }
+    catch (Exception ex)
+    {
+        return Results.StatusCode(500);
+    }
+})
+.WithName("GetSiteRamsPhotos")
+.WithOpenApi();
+
+
+// ============================================================================
+// CHECK IN & OUT FALLBACK
+// ============================================================================
+
+// Manual Check-In
+app.MapPost("/api/geofence-events/manual-checkin", async (
+    ManualCheckInRequest request,
+    IGeofenceService geofenceService) =>
+{
+    var result = await geofenceService.ManualCheckInAsync(request);
+    return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+})
+.WithName("ManualCheckIn")
+.WithOpenApi();
+
+// Manual Check-Out
+app.MapPost("/api/geofence-events/manual-checkout", async (
+    ManualCheckOutRequest request,
+    IGeofenceService geofenceService) =>
+{
+    var result = await geofenceService.ManualCheckOutAsync(request);
+    return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+})
+.WithName("ManualCheckOut")
+.WithOpenApi();
+
+
+// ============================================================================
+// HISTORY - Get today's geofence events for a user
+// ============================================================================
+app.MapGet("/api/geofence-events/user/{userId}/today", async (
+    string userId,
+    RascorDbContext dbContext) =>
+{
+    try
+    {
+        var today = DateTime.UtcNow.Date;  // CHANGED: Use UtcNow instead of Today
+        var tomorrow = today.AddDays(1);
+
+        var events = await dbContext.GeofenceEvents
+            .Where(e => e.UserId == userId &&
+                        e.Timestamp >= today &&
+                        e.Timestamp < tomorrow)
+            .Join(dbContext.Sites,
+                  e => e.SiteId,
+                  s => s.Id,
+                  (e, s) => new
+                  {
+                      EventType = e.EventType,
+                      SiteName = s.Name,
+                      Timestamp = e.Timestamp,
+                      TriggerMethod = e.TriggerMethod
+                  })
+            .OrderByDescending(e => e.Timestamp)
+            .ToListAsync();
+
+        return Results.Ok(events);
+    }
+    catch (Exception ex)
+    {
+        return Results.StatusCode(500);
+    }
+})
+.WithName("GetTodaysEvents")
+.WithOpenApi();
+
 
 app.Run();
 

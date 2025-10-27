@@ -23,12 +23,32 @@ public class RascorDbContext : DbContext
     public DbSet<WorkAssignment> WorkAssignments => Set<WorkAssignment>();
     public DbSet<RamsAcceptance> RamsAcceptances => Set<RamsAcceptance>();
 
+    public DbSet<RamsPhoto> RamsPhotos => Set<RamsPhoto>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
+        ConfigureGeofenceEntities(modelBuilder);
         ConfigureExistingEntities(modelBuilder);
         ConfigureRamsEntities(modelBuilder);
+    }
+
+    private void ConfigureGeofenceEntities(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<GeofenceEvent>(entity =>
+        {
+            entity.ToTable("geofence_events");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.SiteId).HasColumnName("site_id");
+            entity.Property(e => e.EventType).HasColumnName("event_type");
+            entity.Property(e => e.TriggerMethod).HasColumnName("trigger_method");  // ADD THIS
+            entity.Property(e => e.Latitude).HasColumnName("latitude");
+            entity.Property(e => e.Longitude).HasColumnName("longitude");
+            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
+        });
     }
 
     private void ConfigureExistingEntities(ModelBuilder modelBuilder)
@@ -43,7 +63,9 @@ public class RascorDbContext : DbContext
             entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
             entity.Property(e => e.Latitude).HasColumnName("latitude").HasPrecision(10, 8).IsRequired();
             entity.Property(e => e.Longitude).HasColumnName("longitude").HasPrecision(11, 8).IsRequired();
-            entity.Property(e => e.RadiusMeters).HasColumnName("radius_meters").IsRequired();
+            // entity.Property(e => e.RadiusMeters).HasColumnName("radius_meters").IsRequired();
+            entity.Property(e => e.AutoTriggerRadiusMeters).HasColumnName("auto_trigger_radius_meters").IsRequired().HasDefaultValue(50);
+            entity.Property(e => e.ManualTriggerRadiusMeters).HasColumnName("manual_trigger_radius_meters").IsRequired().HasDefaultValue(150);
         });
 
         // Configure GeofenceEvent entity

@@ -37,16 +37,16 @@ public partial class SettingsPage : ContentPage
     {
         // Load user info from DeviceIdentityService
         UserIdLabel.Text = $"User ID: {_configService.CurrentUserId}";
-        DeviceIdLabel.Text = $"Device ID: {_deviceIdentity.GetDeviceId()}";
+        //DeviceIdLabel.Text = $"Device ID: {_deviceIdentity.GetDeviceId()}";
         
         // Load geofence count
         UpdateGeofenceStatus();
         
         // Load sync status
-        UpdateSyncStatus();
+        //UpdateSyncStatus();
         
         // Load app version
-        VersionLabel.Text = $"Version: {AppInfo.VersionString}";
+        //VersionLabel.Text = $"Version: {AppInfo.VersionString}";
     }
 
     private void RefreshSettings()
@@ -86,24 +86,24 @@ public partial class SettingsPage : ContentPage
         }
     }
 
-    private void UpdateSyncStatus()
-    {
-        // TODO: Get actual pending count from queue
-        var pendingCount = 0;
+    //private void UpdateSyncStatus()
+    //{
+    //    // TODO: Get actual pending count from queue
+    //    var pendingCount = 0;
         
-        PendingItemsLabel.Text = $"Pending items: {pendingCount}";
+    //    PendingItemsLabel.Text = $"Pending items: {pendingCount}";
         
-        if (pendingCount > 0)
-        {
-            SyncStatusLabel.Text = $"Status: {pendingCount} items pending";
-            SyncStatusLabel.TextColor = Colors.Orange;
-        }
-        else
-        {
-            SyncStatusLabel.Text = "Status: All synced ✓";
-            SyncStatusLabel.TextColor = Colors.Green;
-        }
-    }
+    //    if (pendingCount > 0)
+    //    {
+    //        SyncStatusLabel.Text = $"Status: {pendingCount} items pending";
+    //        SyncStatusLabel.TextColor = Colors.Orange;
+    //    }
+    //    else
+    //    {
+    //        SyncStatusLabel.Text = "Status: All synced ✓";
+    //        SyncStatusLabel.TextColor = Colors.Green;
+    //    }
+    //}
 
     private async void OnCopyDeviceIdClicked(object sender, EventArgs e)
     {
@@ -121,7 +121,7 @@ public partial class SettingsPage : ContentPage
         try
         {
             await Task.Delay(1000);
-            UpdateSyncStatus();
+            //UpdateSyncStatus();
             await DisplayAlert("Success", "All data synced successfully", "OK");
         }
         catch (Exception ex)
@@ -241,16 +241,6 @@ public partial class SettingsPage : ContentPage
         {
             _logger.LogError(ex, "Simulate exit failed");
             await DisplayAlert("Error", $"Simulation failed: {ex.Message}", "OK");
-        }
-    }
-
-    private async void OnLogoutClicked(object sender, EventArgs e)
-    {
-        var result = await DisplayAlert("Logout", "Are you sure you want to logout?", "Yes", "No");
-        if (result)
-        {
-            _logger.LogInformation("User logged out");
-            await DisplayAlert("Logged Out", "You have been logged out", "OK");
         }
     }
 }

@@ -88,7 +88,7 @@ public class IOSGeofenceService : IGeofenceService
             foreach (var site in sites)
             {
                 var coordinate = new CLLocationCoordinate2D(site.Latitude, site.Longitude);
-                var region = new CLCircularRegion(coordinate, site.RadiusMeters, site.Id)
+                var region = new CLCircularRegion(coordinate, site.AutoTriggerRadiusMeters, site.Id)
                 {
                     NotifyOnEntry = true,
                     NotifyOnExit = true

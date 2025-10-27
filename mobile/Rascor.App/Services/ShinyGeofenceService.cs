@@ -74,7 +74,7 @@ public class ShinyGeofenceService : IGeofenceService
                 var region = new GeofenceRegion(
                     site.Id, // identifier
                     new Position(site.Latitude, site.Longitude), // center
-                    Distance.FromMeters(site.RadiusMeters) // radius
+                    Distance.FromMeters(site.AutoTriggerRadiusMeters) // radius
                 )
                 {
                     NotifyOnEntry = true,
@@ -85,7 +85,7 @@ public class ShinyGeofenceService : IGeofenceService
                 await _geofenceManager.StartMonitoring(region);
                 successCount++;
                 _logger.LogWarning("✅ Registered geofence: {SiteId} ({SiteName}) at ({Lat}, {Lon}) radius {Radius}m, NotifyOnEntry={Entry}, NotifyOnExit={Exit}",
-                    site.Id, site.Name, site.Latitude, site.Longitude, site.RadiusMeters, region.NotifyOnEntry, region.NotifyOnExit);
+                    site.Id, site.Name, site.Latitude, site.Longitude, site.AutoTriggerRadiusMeters, region.NotifyOnEntry, region.NotifyOnExit);
             }
             catch (Exception ex)
             {

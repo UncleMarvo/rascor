@@ -1,12 +1,29 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Controls.Shapes;
+using Rascor.App.Services;
+
 namespace Rascor.App.Pages;
 
 public partial class HistoryPage : ContentPage
 {
     private bool _showingAttendance = true;
+    private readonly ILogger<HistoryPage> _logger;  // FIX: was ILogger<HomePage>
+    private readonly RamsPhotoService _ramsPhotoService;
+    private readonly BackendApi _backendApi;
+    private readonly DeviceIdentityService _deviceIdentity;
 
-    public HistoryPage()
+    public HistoryPage(
+        ILogger<HistoryPage> logger,
+        RamsPhotoService ramsPhotoService,
+        BackendApi backendApi,
+        DeviceIdentityService deviceIdentity)
     {
         InitializeComponent();
+        _logger = logger;
+        _ramsPhotoService = ramsPhotoService;
+        _backendApi = backendApi;
+        _deviceIdentity = deviceIdentity;
+
         LoadHistory();
     }
 
@@ -19,42 +36,43 @@ public partial class HistoryPage : ContentPage
     private void LoadHistory()
     {
         // Load both histories
-        LoadAttendanceHistory();
+        _ = LoadAttendanceHistory();  // Fire and forget
         LoadRamsHistory();
     }
 
     private void RefreshHistory()
     {
         if (_showingAttendance)
-            LoadAttendanceHistory();
+            _ = LoadAttendanceHistory();  // Fire and forget
         else
             LoadRamsHistory();
     }
 
-    private void LoadAttendanceHistory()
+    private async Task LoadAttendanceHistory()  // FIX: Make async
     {
-        // TODO: Load from local database
-        AttendanceItemsContainer.Clear();
-        
-        // Show empty state for now
-        AttendanceEmptyState.IsVisible = true;
-        AttendanceItemsContainer.IsVisible = false;
+        await LoadCheckInsAsync();
     }
 
     private void LoadRamsHistory()
     {
-        // TODO: Load from local database
-        RamsItemsContainer.Clear();
-        
-        // Show empty state for now
-        RamsEmptyState.IsVisible = true;
-        RamsItemsContainer.IsVisible = false;
+        try
+        {
+            // Load RAMS photos
+            var photos = _ramsPhotoService.GetTodaysPhotos();
+            RamsPhotosCollection.ItemsSource = photos;
+
+            _logger.LogInformation("Loaded {Count} RAMS photos", photos.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load RAMS photos");
+        }
     }
 
     private void OnAttendanceTabClicked(object sender, EventArgs e)
     {
         _showingAttendance = true;
-        
+
         // Update button styles
         AttendanceTabButton.BackgroundColor = Colors.DodgerBlue;
         AttendanceTabButton.TextColor = Colors.White;
@@ -64,12 +82,15 @@ public partial class HistoryPage : ContentPage
         // Show/hide containers
         AttendanceHistoryContainer.IsVisible = true;
         RamsHistoryContainer.IsVisible = false;
+
+        // Reload data
+        _ = LoadAttendanceHistory();
     }
 
     private void OnRamsTabClicked(object sender, EventArgs e)
     {
         _showingAttendance = false;
-        
+
         // Update button styles
         RamsTabButton.BackgroundColor = Colors.DodgerBlue;
         RamsTabButton.TextColor = Colors.White;
@@ -79,17 +100,52 @@ public partial class HistoryPage : ContentPage
         // Show/hide containers
         AttendanceHistoryContainer.IsVisible = false;
         RamsHistoryContainer.IsVisible = true;
+
+        // Reload data
+        LoadRamsHistory();
+    }
+
+    private async Task LoadCheckInsAsync()
+    {
+        try
+        {
+            var userId = _deviceIdentity.GetUserId();
+
+            // Get today's events from backend
+            var response = await _backendApi.GetTodaysEventsAsync(userId);
+
+            if (response != null && response.Count > 0)
+            {
+                CheckInsCollection.ItemsSource = response;
+            }
+            else
+            {
+                CheckInsCollection.ItemsSource = new List<object>();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load check-ins");
+            // Show empty if offline
+            CheckInsCollection.ItemsSource = new List<object>();
+        }
     }
 
     // TODO: Add methods to create history item cards
-    private Frame CreateAttendanceHistoryCard(string siteName, DateTime entryTime, DateTime? exitTime)
+    private Border CreateAttendanceHistoryCard(string siteName, DateTime entryTime, DateTime? exitTime)
     {
-        var frame = new Frame
+        var frame = new Border
         {
-            BorderColor = Colors.LightGray,
-            CornerRadius = 10,
+            Stroke = Colors.LightGray,
+            StrokeShape = new RoundRectangle { CornerRadius = 10 },
             Padding = 15,
-            HasShadow = true
+            Shadow = new Shadow
+            {
+                Brush = Colors.Black,
+                Offset = new Point(0, 2),
+                Radius = 8,
+                Opacity = 0.3f
+            }
         };
 
         var layout = new VerticalStackLayout { Spacing = 5 };
@@ -139,14 +195,20 @@ public partial class HistoryPage : ContentPage
         return frame;
     }
 
-    private Frame CreateRamsHistoryCard(string workType, string siteName, DateTime signedAt)
+    private Border CreateRamsHistoryCard(string workType, string siteName, DateTime signedAt)
     {
-        var frame = new Frame
+        var frame = new Border
         {
-            BorderColor = Colors.Green,
-            CornerRadius = 10,
+            Stroke = Colors.Green,
+            StrokeShape = new RoundRectangle { CornerRadius = 10 },
             Padding = 15,
-            HasShadow = true
+            Shadow = new Shadow
+            {
+                Brush = Colors.Black,
+                Offset = new Point(0, 2),
+                Radius = 8,
+                Opacity = 0.3f
+            }
         };
 
         var layout = new VerticalStackLayout { Spacing = 5 };

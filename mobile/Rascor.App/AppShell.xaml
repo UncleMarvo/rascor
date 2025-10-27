@@ -3,27 +3,70 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
        xmlns:pages="clr-namespace:Rascor.App.Pages"
        x:Class="Rascor.App.AppShell"
-       Shell.FlyoutBehavior="Disabled">
+       Shell.FlyoutBehavior="Disabled"
+       BackgroundColor="{StaticResource DarkSlateGrey}"
+       Shell.TabBarBackgroundColor="{StaticResource DarkSlateGrey}">
+
+    <Shell.Resources>
+        <Style TargetType="TabBar">
+            <Setter Property="Shell.TabBarTitleColor" Value="White"/>
+        </Style>
+    </Shell.Resources>
+
+    <Shell.TitleView>
+        <Grid BackgroundColor="{StaticResource DarkSlateGrey}" 
+              Padding="10,5"
+              ColumnDefinitions="Auto,*"
+              HeightRequest="60">
+
+            <Grid.Shadow>
+                <Shadow Brush="Black"
+                    Offset="0,2"
+                    Radius="8"
+                    Opacity="0.3" />
+            </Grid.Shadow>
+
+            <!-- Logo on the left -->
+            <Image Source="rascor_logo.png" 
+                   Grid.Column="0"
+                   Aspect="AspectFit"
+                   HeightRequest="40"
+                   WidthRequest="120"
+                   HorizontalOptions="Start"
+                   VerticalOptions="Center" />
+
+            <!-- Page title on the right -->
+            <Label x:Name="PageTitleLabel"
+                   Grid.Column="1"
+                   Text=""
+                   TextColor="White"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   HorizontalOptions="End"
+                   VerticalOptions="Center"
+                   Margin="0,0,10,0" />
+        </Grid>
+    </Shell.TitleView>
 
     <!-- Tab Bar Navigation -->
     <TabBar>
         <!-- Home Tab -->
-        <Tab Title="Home">
-            <ShellContent ContentTemplate="{DataTemplate pages:HomePage}" />
+        <Tab Title="Home" Icon="home_icon.svg">
+            <ShellContent ContentTemplate="{DataTemplate pages:HomePage}"/>
         </Tab>
 
         <!-- My Work Tab -->
-        <Tab Title="Work">
+        <!--<Tab Title="Work Icon="work_icon.svg"">
             <ShellContent ContentTemplate="{DataTemplate pages:MyWorkPage}" />
-        </Tab>
+        </Tab>-->
 
         <!-- History Tab -->
-        <Tab Title="History">
+        <Tab Title="History" Icon="history_icon.svg">
             <ShellContent ContentTemplate="{DataTemplate pages:HistoryPage}" />
         </Tab>
 
         <!-- Settings Tab -->
-        <Tab Title="Settings">
+        <Tab Title="Settings" Icon="settings_icon.svg">
             <ShellContent ContentTemplate="{DataTemplate pages:SettingsPage}" />
         </Tab>
     </TabBar>

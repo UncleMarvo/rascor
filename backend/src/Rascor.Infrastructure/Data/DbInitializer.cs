@@ -11,43 +11,43 @@ public static class DbInitializer
         // Seed sites if they don't exist
         if (!await db.Sites.AnyAsync())
         {
-            var testSites = new[]
+            var testSites = new List<Site>
             {
-                new Site(
-                    Id: "site-001",
-                    Name: "Dublin Office",
-                    Latitude: 53.3498,
-                    Longitude: -6.2603,
-                    RadiusMeters: 100
-                ),
-                new Site(
-                    Id: "site-002",
-                    Name: "Dublin Warehouse",
-                    Latitude: 53.3520,
-                    Longitude: -6.2570,
-                    RadiusMeters: 150
-                ),
-                new Site(
-                    Id: "site-003",
-                    Name: "Cork Office",
-                    Latitude: 51.8985,
-                    Longitude: -8.4756,
-                    RadiusMeters: 120
-                ),
-                new Site(
-                    Id: "site-004",
-                    Name: "Wexford Home",
-                    Latitude: 52.5103567,
-                    Longitude: -6.5767854,
-                    RadiusMeters: 50
-                ),
-                new Site(
-                    Id: "site-005",
-                    Name: "Wexford GreenTechHQ",
-                    Latitude: 52.4930494,
-                    Longitude: -6.5640803,
-                    RadiusMeters: 150
-                )
+                new Site
+                {
+                    Id = "site-001",
+                    Name = "Dublin Office",
+                    Latitude = 53.3498,
+                    Longitude = -6.2603
+                },
+                new Site
+                {
+                    Id = "site-002",
+                    Name = "Dublin Warehouse",
+                    Latitude = 53.3520,
+                    Longitude = -6.2570
+                },
+                new Site
+                {
+                    Id = "site-003",
+                    Name = "Cork Office",
+                    Latitude = 51.8985,
+                    Longitude = -8.4756
+                },
+                new Site
+                {
+                    Id = "site-004",
+                    Name = "Wexford Home",
+                    Latitude = 52.5103567,
+                    Longitude = -6.5767854
+                },
+                new Site
+                {
+                    Id = "site-005",
+                    Name = "Wexford GreenTechHQ",
+                    Latitude = 52.4930494,
+                    Longitude = -6.5640803
+                }
             };
 
             db.Sites.AddRange(testSites);

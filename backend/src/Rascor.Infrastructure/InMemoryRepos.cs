@@ -1,4 +1,5 @@
 using Rascor.Domain;
+using Rascor.Domain.Entities;
 using System.Collections.Concurrent;
 
 namespace Rascor.Infrastructure;
@@ -22,6 +23,16 @@ public class InMemoryGeofenceEventRepository : IGeofenceEventRepository
     {
         return Task.FromResult(_events.Where(e => e.SiteId == siteId).ToList());
     }
+
+    public Task<GeofenceEvent?> GetLastEventForDeviceAtSiteAsync(string userId, string siteId)
+    {
+        var lastEvent = _events
+            .Where(e => e.UserId == userId && e.SiteId == siteId)
+            .OrderByDescending(e => e.Timestamp)
+            .FirstOrDefault();
+
+        return Task.FromResult(lastEvent);
+    }
 }
 
 public class InMemorySiteRepository : ISiteRepository
@@ -31,13 +42,13 @@ public class InMemorySiteRepository : ISiteRepository
     public InMemorySiteRepository()
     {
         // Seed demo site (San Francisco)
-        var demoSite = new Site(
-            Id: "site-001",
-            Name: "SF Office",
-            Latitude: 37.7749,
-            Longitude: -122.4194,
-            RadiusMeters: 150
-        );
+        var demoSite = new Site
+        {
+            Id = "site-001",
+            Name = "SF Office",
+            Latitude = 37.7749,
+            Longitude = -122.4194
+        };
         _sites.TryAdd(demoSite.Id, demoSite);
     }
 
@@ -56,6 +67,13 @@ public class InMemorySiteRepository : ISiteRepository
     {
         _sites.TryAdd(site.Id, site);
         return Task.CompletedTask;
+    }
+
+    public Task<List<Site>> GetSitesByDeviceIdAsync(string userId)
+    {
+        // In-memory implementation: return all sites
+        // In real implementation, this would filter by device assignments
+        return Task.FromResult(_sites.Values.ToList());
     }
 }
 

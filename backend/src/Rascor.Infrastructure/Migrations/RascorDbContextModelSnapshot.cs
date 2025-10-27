@@ -22,6 +22,61 @@ namespace Rascor.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Rascor.Domain.Entities.GeofenceEvent", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("event_type");
+
+                    b.Property<double>("Latitude")
+                        .HasPrecision(10, 8)
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<double>("Longitude")
+                        .HasPrecision(11, 8)
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<string>("SiteId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("site_id");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("timestamp");
+
+                    b.Property<string>("TriggerMethod")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("trigger_method");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SiteId");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("geofence_events", (string)null);
+                });
+
             modelBuilder.Entity("Rascor.Domain.Entities.RamsAcceptance", b =>
                 {
                     b.Property<string>("Id")
@@ -223,6 +278,109 @@ namespace Rascor.Infrastructure.Migrations
                     b.ToTable("rams_documents", (string)null);
                 });
 
+            modelBuilder.Entity("Rascor.Domain.Entities.RamsPhoto", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CapturedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("captured_at");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("file_path");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size_bytes");
+
+                    b.Property<string>("OriginalFilename")
+                        .HasColumnType("text")
+                        .HasColumnName("original_filename");
+
+                    b.Property<string>("SiteId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("site_id");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("uploaded_at");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("rams_photos");
+                });
+
+            modelBuilder.Entity("Rascor.Domain.Entities.Site", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AutoTriggerRadiusMeters")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(50)
+                        .HasColumnName("auto_trigger_radius_meters");
+
+                    b.Property<double>("Latitude")
+                        .HasPrecision(10, 8)
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<double>("Longitude")
+                        .HasPrecision(11, 8)
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<int>("ManualTriggerRadiusMeters")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(150)
+                        .HasColumnName("manual_trigger_radius_meters");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("sites", (string)null);
+                });
+
+            modelBuilder.Entity("Rascor.Domain.Entities.UserAssignment", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("SiteId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("site_id");
+
+                    b.Property<DateTimeOffset>("AssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assigned_at");
+
+                    b.HasKey("UserId", "SiteId");
+
+                    b.ToTable("assignments", (string)null);
+                });
+
             modelBuilder.Entity("Rascor.Domain.Entities.WorkAssignment", b =>
                 {
                     b.Property<string>("Id")
@@ -330,109 +488,6 @@ namespace Rascor.Infrastructure.Migrations
                     b.ToTable("work_types", (string)null);
                 });
 
-            modelBuilder.Entity("Rascor.Domain.GeofenceEvent", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("id");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("event_type");
-
-                    b.Property<double?>("Latitude")
-                        .HasPrecision(10, 8)
-                        .HasColumnType("double precision")
-                        .HasColumnName("latitude");
-
-                    b.Property<double?>("Longitude")
-                        .HasPrecision(11, 8)
-                        .HasColumnType("double precision")
-                        .HasColumnName("longitude");
-
-                    b.Property<string>("SiteId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("site_id");
-
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("timestamp");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SiteId");
-
-                    b.HasIndex("Timestamp");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("geofence_events", (string)null);
-                });
-
-            modelBuilder.Entity("Rascor.Domain.Site", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("id");
-
-                    b.Property<double>("Latitude")
-                        .HasPrecision(10, 8)
-                        .HasColumnType("double precision")
-                        .HasColumnName("latitude");
-
-                    b.Property<double>("Longitude")
-                        .HasPrecision(11, 8)
-                        .HasColumnType("double precision")
-                        .HasColumnName("longitude");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
-
-                    b.Property<int>("RadiusMeters")
-                        .HasColumnType("integer")
-                        .HasColumnName("radius_meters");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("sites", (string)null);
-                });
-
-            modelBuilder.Entity("Rascor.Domain.UserAssignment", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("user_id");
-
-                    b.Property<string>("SiteId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("site_id");
-
-                    b.Property<DateTimeOffset>("AssignedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("assigned_at");
-
-                    b.HasKey("UserId", "SiteId");
-
-                    b.ToTable("assignments", (string)null);
-                });
-
             modelBuilder.Entity("Rascor.Domain.Entities.RamsAcceptance", b =>
                 {
                     b.HasOne("Rascor.Domain.Entities.RamsDocument", "RamsDocument")
@@ -441,7 +496,7 @@ namespace Rascor.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Rascor.Domain.Site", "Site")
+                    b.HasOne("Rascor.Domain.Entities.Site", "Site")
                         .WithMany()
                         .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -483,7 +538,7 @@ namespace Rascor.Infrastructure.Migrations
 
             modelBuilder.Entity("Rascor.Domain.Entities.WorkAssignment", b =>
                 {
-                    b.HasOne("Rascor.Domain.Site", "Site")
+                    b.HasOne("Rascor.Domain.Entities.Site", "Site")
                         .WithMany()
                         .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.Restrict)

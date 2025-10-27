@@ -41,7 +41,8 @@ public class GetMobileBootstrap
                 s.Name,
                 s.Latitude,
                 s.Longitude,
-                s.RadiusMeters
+                s.AutoTriggerRadiusMeters,
+                s.ManualTriggerRadiusMeters
             ))
             .ToList();
 

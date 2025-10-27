@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:Rascor.App.Converters"
              x:Class="Rascor.App.Pages.HistoryPage"
              Title="History">
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:EventIconConverter x:Key="EventIconConverter"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
     <Grid RowDefinitions="Auto,Auto,*" Padding="0">
-        
+
         <!-- Header -->
         <VerticalStackLayout Grid.Row="0" Padding="20,20,20,10" Spacing="5">
             <Label Text="📜 History" 
@@ -36,7 +43,7 @@
                     Clicked="OnRamsTabClicked" />
         </Grid>
 
-        <!-- Content Area (switches between tabs) -->
+        <!-- Content Area -->
         <ScrollView Grid.Row="2">
             <VerticalStackLayout Padding="20,0,20,20" Spacing="15">
 
@@ -48,54 +55,114 @@
                            FontSize="16" 
                            FontAttributes="Bold"
                            Margin="0,0,0,10" />
-                    
-                    <!-- Empty State -->
-                    <VerticalStackLayout x:Name="AttendanceEmptyState"
-                                         VerticalOptions="Center"
-                                         HorizontalOptions="Center"
-                                         Spacing="10"
-                                         Padding="0,50">
-                        <Label Text="📭" 
-                               FontSize="48" 
-                               HorizontalOptions="Center" />
-                        <Label Text="No attendance history" 
-                               FontSize="16" 
-                               HorizontalOptions="Center"
-                               TextColor="Gray" />
-                    </VerticalStackLayout>
 
-                    <!-- Attendance items will be added here -->
-                    <VerticalStackLayout x:Name="AttendanceItemsContainer" 
-                                         Spacing="10" />
+                    <CollectionView x:Name="CheckInsCollection">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="White"
+                    Padding="12"
+                    Margin="5">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8"/>
+                                    </Border.StrokeShape>
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <!-- Icon -->
+                                        <Label Grid.Column="0"
+                           Text="{Binding EventType, Converter={StaticResource EventIconConverter}}"
+                           FontSize="24"
+                           VerticalOptions="Center"
+                           Margin="0,0,10,0"/>
+
+                                        <!-- Info -->
+                                        <VerticalStackLayout Grid.Column="1">
+                                            <Label Text="{Binding SiteName}" 
+                               FontAttributes="Bold"
+                               TextColor="Black"/>
+                                            <Label Text="{Binding Timestamp, StringFormat='{0:h:mm tt}'}" 
+                               FontSize="12" 
+                               TextColor="Gray"/>
+                                            <Label Text="{Binding TriggerMethod}" 
+                               FontSize="12" 
+                               TextColor="Gray"/>
+                                        </VerticalStackLayout>
+
+                                        <!-- Enter/Exit Label -->
+                                        <Label Grid.Column="2"
+                           Text="{Binding EventType}"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           VerticalOptions="Center"
+                           HorizontalOptions="End">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" 
+                                        Binding="{Binding EventType}" 
+                                        Value="Enter">
+                                                    <Setter Property="Text" Value="Checked In" />
+                                                    <Setter Property="TextColor" Value="Green" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" 
+                                        Binding="{Binding EventType}" 
+                                        Value="Exit">
+                                                    <Setter Property="Text" Value="Checked Out" />
+                                                    <Setter Property="TextColor" Value="Red" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
                 </VerticalStackLayout>
 
                 <!-- RAMS History Container -->
                 <VerticalStackLayout x:Name="RamsHistoryContainer" 
                                      IsVisible="False"
                                      Spacing="10">
-                    <Label Text="📋 RAMS Signature History" 
+                    <Label Text="📷 RAMS Photos Today" 
                            FontSize="16" 
-                           FontAttributes="Bold"
-                           Margin="0,0,0,10" />
-                    
-                    <!-- Empty State -->
-                    <VerticalStackLayout x:Name="RamsEmptyState"
-                                         VerticalOptions="Center"
-                                         HorizontalOptions="Center"
-                                         Spacing="10"
-                                         Padding="0,50">
-                        <Label Text="📭" 
-                               FontSize="48" 
-                               HorizontalOptions="Center" />
-                        <Label Text="No RAMS signatures" 
-                               FontSize="16" 
-                               HorizontalOptions="Center"
-                               TextColor="Gray" />
-                    </VerticalStackLayout>
+                           FontAttributes="Bold" 
+                           Margin="0,0,0,10"/>
 
-                    <!-- RAMS items will be added here -->
-                    <VerticalStackLayout x:Name="RamsItemsContainer" 
-                                         Spacing="10" />
+                    <CollectionView x:Name="RamsPhotosCollection">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="White" 
+                                        Padding="10" 
+                                        Margin="5">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8"/>
+                                    </Border.StrokeShape>
+                                    <Grid ColumnDefinitions="80,*,Auto">
+                                        <!-- Thumbnail -->
+                                        <Image Grid.Column="0"
+                                               Source="{Binding LocalFilePath}"
+                                               Aspect="AspectFill"
+                                               HeightRequest="60"
+                                               WidthRequest="60"/>
+
+                                        <!-- Info -->
+                                        <VerticalStackLayout Grid.Column="1" Margin="10,0">
+                                            <Label Text="{Binding SiteName}" 
+                                                   FontAttributes="Bold"/>
+                                            <Label Text="{Binding CapturedAt, StringFormat='{0:h:mm tt}'}" 
+                                                   FontSize="12" 
+                                                   TextColor="Gray"/>
+                                            <Label Text="{Binding FileSizeBytes, StringFormat='{0:N0} KB'}" 
+                                                   FontSize="12" 
+                                                   TextColor="Gray"/>
+                                        </VerticalStackLayout>
+
+                                        <!-- Status -->
+                                        <Label Grid.Column="2"
+                                               Text="✓ Saved"
+                                               TextColor="Green"
+                                               VerticalOptions="Center"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
                 </VerticalStackLayout>
 
             </VerticalStackLayout>

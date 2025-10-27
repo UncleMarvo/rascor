@@ -1,3 +1,5 @@
+using Microsoft.Maui.Controls.Shapes;
+
 namespace Rascor.App.Pages;
 
 public partial class MyWorkPage : ContentPage
@@ -51,14 +53,20 @@ public partial class MyWorkPage : ContentPage
     }
 
     // TODO: Add method to create work assignment cards dynamically
-    private Frame CreateWorkAssignmentCard(string workType, string site, bool isSigned)
+    private Border CreateWorkAssignmentCard(string workType, string site, bool isSigned)
     {
-        var frame = new Frame
+        var frame = new Border
         {
-            BorderColor = isSigned ? Colors.Green : Colors.Orange,
-            CornerRadius = 10,
+            Stroke = isSigned ? Colors.Green : Colors.Orange,
+            StrokeShape = new RoundRectangle { CornerRadius = 10 },
             Padding = 15,
-            HasShadow = true
+            Shadow = new Shadow
+            {
+                Brush = Colors.Black,
+                Offset = new Point(0, 2),
+                Radius = 8,
+                Opacity = 0.3f
+            }
         };
 
         var layout = new VerticalStackLayout { Spacing = 10 };

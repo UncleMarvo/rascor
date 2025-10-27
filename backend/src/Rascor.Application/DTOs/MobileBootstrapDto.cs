@@ -20,5 +20,6 @@ public record SiteDto(
     string Name,
     double Latitude,
     double Longitude,
-    int RadiusMeters
+    int AutoTriggerRadiusMeters,
+    int ManualTriggerRadiusMeters
 );

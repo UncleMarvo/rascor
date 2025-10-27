@@ -24,10 +24,7 @@
                 Margin="0,0,0,20" />
 
             <!-- Step 1 -->
-            <Border
-                BackgroundColor="#F0F0F0"
-                Padding="15"
-                StrokeThickness="0">
+            <Border>
                 <VerticalStackLayout Spacing="10">
                     <Label
                         Text="📍 Step 1: Location Permission"
@@ -51,10 +48,7 @@
             </Border>
 
             <!-- Step 2 -->
-            <Border
-                BackgroundColor="#F0F0F0"
-                Padding="15"
-                StrokeThickness="0">
+            <Border>
                 <VerticalStackLayout Spacing="10">
                     <Label
                         Text="🔔 Step 2: Notifications"
@@ -73,10 +67,7 @@
             </Border>
 
             <!-- Step 3 -->
-            <Border
-                BackgroundColor="#F0F0F0"
-                Padding="15"
-                StrokeThickness="0">
+            <Border>
                 <VerticalStackLayout Spacing="10">
                     <Label
                         Text="✅ Step 3: You're All Set!"

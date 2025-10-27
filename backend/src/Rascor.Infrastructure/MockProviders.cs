@@ -1,4 +1,5 @@
 using Rascor.Domain;
+using Rascor.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Rascor.Infrastructure;

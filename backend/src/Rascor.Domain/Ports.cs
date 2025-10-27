@@ -1,3 +1,5 @@
+using Rascor.Domain.Entities;
+
 namespace Rascor.Domain;
 
 // ============================================================================
@@ -10,6 +12,7 @@ namespace Rascor.Domain;
 public interface IGeofenceEventRepository
 {
     Task AddAsync(GeofenceEvent evt, CancellationToken ct = default);
+    Task<GeofenceEvent?> GetLastEventForDeviceAtSiteAsync(string deviceId, string siteId);
     Task<List<GeofenceEvent>> GetByUserIdAsync(string userId, CancellationToken ct = default);
     Task<List<GeofenceEvent>> GetBySiteIdAsync(string siteId, CancellationToken ct = default);
 }
@@ -22,6 +25,17 @@ public interface ISiteRepository
     Task<Site?> GetByIdAsync(string siteId, CancellationToken ct = default);
     Task<List<Site>> GetAllAsync(CancellationToken ct = default);
     Task AddAsync(Site site, CancellationToken ct = default);
+    Task<List<Site>> GetSitesByDeviceIdAsync(string deviceId);
+}
+
+/// <summary>
+/// Repository for RAMS photos
+/// </summary>
+public interface IRamsPhotoRepository
+{
+    Task<RamsPhoto> AddAsync(RamsPhoto photo, CancellationToken ct = default);
+    Task<List<RamsPhoto>> GetByUserIdAsync(string userId, int limit = 50, CancellationToken ct = default);
+    Task<List<RamsPhoto>> GetBySiteIdAsync(string siteId, CancellationToken ct = default);
 }
 
 /// <summary>

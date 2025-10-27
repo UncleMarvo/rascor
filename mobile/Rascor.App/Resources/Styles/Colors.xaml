@@ -17,6 +17,12 @@
     <Color x:Key="Gray600">#404040</Color>
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
+    
+    <!-- Custom background colors -->
+    <Color x:Key="DarkSlateGrey">#36454F</Color>
+    <Color x:Key="SoftWhite">#E7DBDB</Color>
+    <Color x:Key="PureWhite">#FFFFFF</Color>
+    
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
@@ -30,5 +36,10 @@
     <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
     <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
     <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
+
+    <!-- Custom brushes -->
+    <SolidColorBrush x:Key="DarkSlateGreyBrush" Color="{StaticResource DarkSlateGrey}"/>
+    <SolidColorBrush x:Key="SoftWhiteBrush" Color="{StaticResource SoftWhite}"/>
+    <SolidColorBrush x:Key="PureWhiteBrush" Color="{StaticResource PureWhite}"/>
 
 </ResourceDictionary>

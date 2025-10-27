@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Rascor.Domain;
+using Rascor.Domain.Entities;
 using Rascor.Infrastructure.Data;
 
 namespace Rascor.Infrastructure.Repositories;
