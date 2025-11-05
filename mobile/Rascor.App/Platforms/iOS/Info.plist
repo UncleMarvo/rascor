@@ -38,15 +38,5 @@
 	<array>
 		<string>location</string>
 	</array>
-
-    <!-- Camera permissions -->
-    <key>NSCameraUsageDescription</key>
-    <string>This app needs camera access to photograph RAMS forms</string>
-    
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>This app needs to save photos of RAMS forms</string>
-    
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>This app needs to access photos of RAMS forms</string>
 </dict>
 </plist>

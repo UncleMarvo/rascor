@@ -17,6 +17,14 @@
             </intent-filter>
         </receiver>
     </application>
+
+    <!-- Email features -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+    </queries>
     
     <!-- Network permissions -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

@@ -35,12 +35,6 @@
                     BackgroundColor="DodgerBlue"
                     TextColor="White"
                     Clicked="OnAttendanceTabClicked" />
-            <Button Grid.Column="1"
-                    x:Name="RamsTabButton"
-                    Text="RAMS Signed"
-                    BackgroundColor="LightGray"
-                    TextColor="Black"
-                    Clicked="OnRamsTabClicked" />
         </Grid>
 
         <!-- Content Area -->
@@ -114,57 +108,6 @@
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
-
-                <!-- RAMS History Container -->
-                <VerticalStackLayout x:Name="RamsHistoryContainer" 
-                                     IsVisible="False"
-                                     Spacing="10">
-                    <Label Text="📷 RAMS Photos Today" 
-                           FontSize="16" 
-                           FontAttributes="Bold" 
-                           Margin="0,0,0,10"/>
-
-                    <CollectionView x:Name="RamsPhotosCollection">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Border BackgroundColor="White" 
-                                        Padding="10" 
-                                        Margin="5">
-                                    <Border.StrokeShape>
-                                        <RoundRectangle CornerRadius="8"/>
-                                    </Border.StrokeShape>
-                                    <Grid ColumnDefinitions="80,*,Auto">
-                                        <!-- Thumbnail -->
-                                        <Image Grid.Column="0"
-                                               Source="{Binding LocalFilePath}"
-                                               Aspect="AspectFill"
-                                               HeightRequest="60"
-                                               WidthRequest="60"/>
-
-                                        <!-- Info -->
-                                        <VerticalStackLayout Grid.Column="1" Margin="10,0">
-                                            <Label Text="{Binding SiteName}" 
-                                                   FontAttributes="Bold"/>
-                                            <Label Text="{Binding CapturedAt, StringFormat='{0:h:mm tt}'}" 
-                                                   FontSize="12" 
-                                                   TextColor="Gray"/>
-                                            <Label Text="{Binding FileSizeBytes, StringFormat='{0:N0} KB'}" 
-                                                   FontSize="12" 
-                                                   TextColor="Gray"/>
-                                        </VerticalStackLayout>
-
-                                        <!-- Status -->
-                                        <Label Grid.Column="2"
-                                               Text="✓ Saved"
-                                               TextColor="Green"
-                                               VerticalOptions="Center"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
-                </VerticalStackLayout>
-
             </VerticalStackLayout>
         </ScrollView>
 

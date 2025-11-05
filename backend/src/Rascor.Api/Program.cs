@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Rascor.Application;
 using Rascor.Application.DTOs;
 using Rascor.Application.Services;
@@ -6,6 +6,7 @@ using Rascor.Domain;
 using Rascor.Domain.Repositories;
 using Rascor.Infrastructure;
 using Rascor.Infrastructure.Data;
+using Rascor.Infrastructure.ExternalServices;
 using Rascor.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,20 +64,13 @@ builder.Services.AddDbContext<RascorDbContext>(options =>
             maxRetryCount: 3,
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null
-        )
+        ).CommandTimeout(120)
     ));
 
 // Repositories (EF Core + PostgreSQL)
 builder.Services.AddScoped<IGeofenceEventRepository, EfGeofenceEventRepository>();
 builder.Services.AddScoped<ISiteRepository, EfSiteRepository>();
-builder.Services.AddScoped<IAssignmentRepository, EfAssignmentRepository>();
 builder.Services.AddSingleton<ISettingsRepository, InMemorySettingsRepository>(); // Keep in-memory for now
-
-// RAMS Repositories
-builder.Services.AddScoped<IWorkTypeRepository, WorkTypeRepository>();
-builder.Services.AddScoped<IRamsDocumentRepository, RamsDocumentRepository>();
-builder.Services.AddScoped<IWorkAssignmentRepository, WorkAssignmentRepository>();
-builder.Services.AddScoped<IRamsAcceptanceRepository, RamsAcceptanceRepository>();
 
 // Providers (swappable)
 builder.Services.AddSingleton<IPushProvider, MockPushProvider>();
@@ -86,20 +80,19 @@ builder.Services.AddSingleton<IEmailProvider, ConsoleEmailProvider>();
 builder.Services.AddScoped<LogGeofenceEventHandler>();
 builder.Services.AddScoped<GetMobileBootstrap>();
 
-// RAMS Application handlers
-builder.Services.AddScoped<GetWorkTypesHandler>();
-builder.Services.AddScoped<GetWorkAssignmentsHandler>();
-builder.Services.AddScoped<GetRamsDocumentHandler>();
-builder.Services.AddScoped<SubmitRamsAcceptanceHandler>();
-builder.Services.AddScoped<IRamsPhotoRepository, EfRamsPhotoRepository>();
+// Zoho Integration Services
+builder.Services.AddHttpClient<ZohoCreatorClient>();
+builder.Services.AddSingleton<ZohoCreatorClient>();
 
-builder.Services.AddScoped<RamsPhotoService>(sp =>
+// Sync Services
+builder.Services.AddScoped<ISyncTracker, DatabaseSyncTracker>();
+
+// Background Service (only if Zoho sync is enabled)
+var enableZohoSync = builder.Configuration.GetValue<bool>("Sync:EnableSync", false);
+if (enableZohoSync)
 {
-    var repository = sp.GetRequiredService<IRamsPhotoRepository>();
-    var logger = sp.GetRequiredService<ILogger<RamsPhotoService>>();
-    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "rams-photos");
-    return new RamsPhotoService(repository, logger, uploadsDir);
-});
+    builder.Services.AddHostedService<ZohoSyncService>();
+}
 
 // Manual Checks
 builder.Services.AddScoped<IGeofenceService, GeofenceService>();
@@ -175,16 +168,14 @@ app.UseHttpsRedirection();
 app.MapGet("/", () => new
 {
     Service = "Rascor API",
-    Version = "2.0.0-RAMS",
+    Version = "3.0.0-Simplified",
     Endpoints = new[]
     {
         "GET /config/mobile?userId={id}",
         "POST /events/geofence",
-        "GET /api/work-types",
-        "GET /api/assignments?userId={id}",
-        "GET /api/rams/{id}",
-        "GET /api/rams/work-type/{workTypeId}",
-        "POST /api/rams/accept",
+        "GET /api/geofence-events/user/{userId}/today",
+        "POST /api/geofence-events/manual-checkin",
+        "POST /api/geofence-events/manual-checkout",
         "GET /swagger"
     }
 });
@@ -217,225 +208,6 @@ app.MapPost("/events/geofence", async (
 })
 .WithName("LogGeofenceEvent")
 .WithOpenApi();
-
-// ============================================================================
-// RAMS ENDPOINTS
-// ============================================================================
-
-// GET /api/work-types - List all active work types
-app.MapGet("/api/work-types", async (
-    GetWorkTypesHandler handler,
-    CancellationToken ct) =>
-{
-    var workTypes = await handler.ExecuteAsync(ct);
-    return Results.Ok(workTypes);
-})
-.WithName("GetWorkTypes")
-.WithOpenApi()
-.WithTags("RAMS");
-
-// GET /api/assignments - Get user's work assignments
-app.MapGet("/api/assignments", async (
-    string userId,
-    GetWorkAssignmentsHandler handler,
-    CancellationToken ct) =>
-{
-    if (string.IsNullOrWhiteSpace(userId))
-    {
-        return Results.BadRequest(new { error = "userId is required" });
-    }
-
-    var assignments = await handler.ExecuteAsync(userId, ct);
-    return Results.Ok(assignments);
-})
-.WithName("GetUserWorkAssignments")
-.WithOpenApi()
-.WithTags("RAMS");
-
-// GET /api/rams/{id} - Get RAMS document with checklist
-app.MapGet("/api/rams/{id}", async (
-    string id,
-    GetRamsDocumentHandler handler,
-    CancellationToken ct) =>
-{
-    var document = await handler.ExecuteAsync(id, ct);
-    
-    if (document == null)
-    {
-        return Results.NotFound(new { error = $"RAMS document {id} not found" });
-    }
-
-    return Results.Ok(document);
-})
-.WithName("GetRamsDocument")
-.WithOpenApi()
-.WithTags("RAMS");
-
-// GET /api/rams/work-type/{workTypeId} - Get current RAMS version for work type
-app.MapGet("/api/rams/work-type/{workTypeId}", async (
-    string workTypeId,
-    GetRamsDocumentHandler handler,
-    CancellationToken ct) =>
-{
-    var document = await handler.GetCurrentVersionAsync(workTypeId, ct);
-    
-    if (document == null)
-    {
-        return Results.NotFound(new { 
-            error = $"No current RAMS document found for work type {workTypeId}" 
-        });
-    }
-
-    return Results.Ok(document);
-})
-.WithName("GetCurrentRamsDocumentByWorkType")
-.WithOpenApi()
-.WithTags("RAMS");
-
-// POST /api/rams/accept - Submit RAMS acceptance
-app.MapPost("/api/rams/accept", async (
-    CreateRamsAcceptanceRequest request,
-    SubmitRamsAcceptanceHandler handler,
-    CancellationToken ct) =>
-{
-    try
-    {
-        var acceptance = await handler.HandleAsync(request, ct);
-        return Results.Created($"/api/rams/acceptances/{acceptance.Id}", acceptance);
-    }
-    catch (InvalidOperationException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-})
-.WithName("SubmitRamsAcceptance")
-.WithOpenApi()
-.WithTags("RAMS");
-
-
-// ============================================================================
-// RAMS PHOTO ENDPOINTS
-// ============================================================================
-app.MapPost("/api/rams-photos/upload", async (
-    HttpRequest request,
-    RamsPhotoService photoService,
-    ILogger<Program> logger) =>
-{
-    try
-    {
-        var form = await request.ReadFormAsync();
-
-        var userId = form["userId"].ToString();
-        var siteId = form["siteId"].ToString();
-        var capturedAtStr = form["capturedAt"].ToString();
-        var file = form.Files["photo"];
-
-        if (file == null || file.Length == 0)
-        {
-            return Results.BadRequest(new { success = false, message = "No file uploaded" });
-        }
-
-        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(siteId))
-        {
-            return Results.BadRequest(new { success = false, message = "Missing userId or siteId" });
-        }
-
-        // Parse captured date
-        if (!DateTime.TryParse(capturedAtStr, out var capturedAt))
-        {
-            capturedAt = DateTime.UtcNow;
-        }
-
-        // Delegate to service
-        using var stream = file.OpenReadStream();
-        var result = await photoService.UploadPhotoAsync(
-            userId,
-            siteId,
-            capturedAt,
-            stream,
-            file.FileName,
-            file.Length
-        );
-
-        if (result.Success)
-        {
-            return Results.Ok(new
-            {
-                success = true,
-                message = result.Message,
-                photoId = result.PhotoId,
-                uploadedAt = result.UploadedAt
-            });
-        }
-        else
-        {
-            return Results.BadRequest(new { success = false, message = result.Message });
-        }
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Failed to upload RAMS photo");
-        return Results.StatusCode(500);
-    }
-})
-.WithName("UploadRamsPhoto")
-.DisableAntiforgery()
-.WithOpenApi();
-
-// Get RAMS photos for a user
-app.MapGet("/api/rams-photos/user/{userId}", async (
-    string userId,
-    RamsPhotoService photoService) =>
-{
-    try
-    {
-        var photos = await photoService.GetUserPhotosAsync(userId);
-
-        return Results.Ok(photos.Select(p => new
-        {
-            p.Id,
-            p.SiteId,
-            p.CapturedAt,
-            p.UploadedAt,
-            p.FileSizeBytes,
-            p.OriginalFilename
-        }));
-    }
-    catch (Exception ex)
-    {
-        return Results.StatusCode(500);
-    }
-})
-.WithName("GetUserRamsPhotos")
-.WithOpenApi();
-
-// Get RAMS photos for a site
-app.MapGet("/api/rams-photos/site/{siteId}", async (
-    string siteId,
-    RamsPhotoService photoService) =>
-{
-    try
-    {
-        var photos = await photoService.GetSitePhotosAsync(siteId);
-
-        return Results.Ok(photos.Select(p => new
-        {
-            p.Id,
-            p.UserId,
-            p.CapturedAt,
-            p.UploadedAt,
-            p.FileSizeBytes,
-            p.OriginalFilename
-        }));
-    }
-    catch (Exception ex)
-    {
-        return Results.StatusCode(500);
-    }
-})
-.WithName("GetSiteRamsPhotos")
-.WithOpenApi();
-
 
 // ============================================================================
 // CHECK IN & OUT FALLBACK
@@ -503,6 +275,154 @@ app.MapGet("/api/geofence-events/user/{userId}/today", async (
 .WithName("GetTodaysEvents")
 .WithOpenApi();
 
+// ==============================================
+// TEST SYNC ENDPOINTS
+// ==============================================
+app.MapGet("/api/test/sync-now", async (
+    IServiceProvider serviceProvider) =>
+{
+    using var scope = serviceProvider.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<RascorDbContext>();
+
+    // Count events
+    var totalEvents = await dbContext.GeofenceEvents.CountAsync();
+    var lastSync = new DateTime(2025, 10, 28, 14, 55, 49, DateTimeKind.Utc);
+    var eventsSinceLastSync = await dbContext.GeofenceEvents
+        .Where(e => e.Timestamp > lastSync)
+        .CountAsync();
+
+    return Results.Ok(new
+    {
+        totalEventsInDatabase = totalEvents,
+        eventsSinceLastSync = eventsSinceLastSync,
+        lastSyncTime = lastSync,
+        message = totalEvents == 0
+            ? "No events in database to sync"
+            : $"Found {eventsSinceLastSync} events to sync"
+    });
+});
+
+app.MapPost("/api/test/force-sync", async (
+    IServiceProvider serviceProvider,
+    ILogger<Program> logger) =>
+{
+    try
+    {
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<RascorDbContext>();
+        var syncTracker = scope.ServiceProvider.GetRequiredService<ISyncTracker>();
+        var zohoClient = scope.ServiceProvider.GetRequiredService<ZohoCreatorClient>();
+
+        var lastSync = await syncTracker.GetLastSyncTimeAsync("geofence_events");
+        var now = DateTime.UtcNow;
+
+        logger.LogInformation("Force sync triggered. Last sync: {LastSync}", lastSync);
+
+        // Removed .Include() calls
+        var events = await dbContext.GeofenceEvents
+            .Where(e => e.Timestamp > lastSync && e.Timestamp <= now)
+            .OrderBy(e => e.Timestamp)
+            .Take(100)
+            .ToListAsync();
+
+        if (!events.Any())
+        {
+            var totalEvents = await dbContext.GeofenceEvents.CountAsync();
+            return Results.Ok(new
+            {
+                success = false,
+                message = "No new events to sync",
+                lastSync = lastSync,
+                totalEventsInDatabase = totalEvents,
+                searchedFrom = lastSync,
+                searchedTo = now
+            });
+        }
+
+        logger.LogInformation("Found {Count} events to sync to Zoho", events.Count);
+
+        // Send IDs only, no names
+        var zohoRecords = events.Select(e => new
+        {
+            ID = e.Id,
+            User_ID = e.UserId,
+            Site_ID = e.SiteId,
+            Event_Type1 = e.EventType,
+            Timestamp = e.Timestamp.ToString("dd-MMM-yyyy HH:mm:ss"),
+            Latitude1 = e.Latitude,
+            Longitude1 = e.Longitude,
+            Trigger_Method1 = e.TriggerMethod
+        }).ToList<object>();
+
+        logger.LogInformation("Syncing to Zoho form: Sample_Activity_Data_Report1");
+
+        var success = await zohoClient.UpsertRecordsAsync(
+            "Sample_Activity_Data_Report1",
+            zohoRecords,
+            default);
+
+        if (success)
+        {
+            await syncTracker.UpdateLastSyncTimeAsync("geofence_events", now);
+            logger.LogInformation("✅ Sync successful! Synced {Count} records", events.Count);
+
+            return Results.Ok(new
+            {
+                success = true,
+                message = "Sync successful to Sample_Activity_Data_Report1 form!",
+                recordsSynced = events.Count,
+                formName = "Sample_Activity_Data_Report1",
+                lastSyncTime = now,
+                syncedEventIds = events.Select(e => e.Id).Take(10).ToList()
+            });
+        }
+        else
+        {
+            await syncTracker.RecordSyncErrorAsync("geofence_events", "Zoho API returned false");
+            logger.LogError("❌ Zoho sync failed");
+
+            return Results.Ok(new
+            {
+                success = false,
+                message = "Sync failed - Zoho API returned false. Check form name and credentials."
+            });
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Exception during force sync");
+        return Results.Ok(new
+        {
+            success = false,
+            error = ex.Message,
+            stackTrace = ex.StackTrace?.Split('\n').Take(10).ToArray()
+        });
+    }
+})
+.WithName("ForceSyncNow")
+.AllowAnonymous();
+
+
+app.MapGet("/api/test/show-zoho-url", (IConfiguration config) =>
+{
+    var ownerName = config["Zoho:OwnerName"];
+    var appName = config["Zoho:AppName"];
+    var dataCenter = config["Zoho:DataCenter"] ?? "eu";
+
+    var urlConstructed = $"https://creator.zoho.{dataCenter}/api/v2.1/data/{ownerName}/{appName}/form/Sample_Activity_Data_Report1";
+
+    return Results.Ok(new
+    {
+        ownerName = ownerName,
+        appName = appName,
+        dataCenter = dataCenter,
+        formName = "Sample_Activity_Data_Report1",
+        fullUrl = urlConstructed,
+        yourAppUrl = "https://creatorapp.zoho.eu/quantumbuild1/rascor-site-attendance"
+    });
+}).AllowAnonymous();
+
+Console.WriteLine("🔥🔥🔥 CANARY BUILD: 2025-10-30 08:15 🔥🔥🔥");
 
 app.Run();
 
@@ -517,3 +437,4 @@ public record GeofenceEventRequest(
     double? Latitude,
     double? Longitude
 );
+

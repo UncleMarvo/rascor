@@ -24,7 +24,13 @@ public class LocationTrackingService
     private Position? _lastLoggedPosition;
     private GpsReading? _lastReading;
     private bool _isListening = false;
-    private const double MinimumLogDistanceMeters = 10; // Only log if moved 10+ meters
+    private const double MinimumLogDistanceMeters = 50; // Only log if moved 50+ meters
+    private DateTime _lastLocationUpdateTime = DateTime.MinValue;
+    private const int MinimumUpdateIntervalSeconds = 20; // Only process location updates every 20 seconds
+    // Track when state changes started to implement dwell time
+    private Dictionary<string, DateTime> _potentialEnterTimes = new();
+    private Dictionary<string, DateTime> _potentialExitTimes = new();
+    private const int DwellTimeSeconds = 90; // Must be inside/outside for 90 seconds
 
     private readonly GeofenceStateService _stateService;
 
@@ -118,7 +124,7 @@ public class LocationTrackingService
             // Create GPS request with 2-minute intervals
             var request = new GpsRequest
             {
-                BackgroundMode = GpsBackgroundMode.Realtime
+                BackgroundMode = GpsBackgroundMode.Realtime,    // Realtime - more aggressive on battery but better event triggers
             };
 
             // Request GPS permissions
@@ -186,6 +192,21 @@ public class LocationTrackingService
             // Store last reading for GetCurrentSite()
             _lastReading = reading;
 
+            // Throttle updates to reduce CPU/battery usage
+            var timeSinceLastUpdate = (DateTime.Now - _lastLocationUpdateTime).TotalSeconds;
+            if (timeSinceLastUpdate < MinimumUpdateIntervalSeconds)
+            {
+                return; // Skip this update, too soon
+            }
+            _lastLocationUpdateTime = DateTime.Now;
+
+            // Ignore low-accuracy readings to prevent false events
+            if (reading.PositionAccuracy > 100) // More than 100m error
+            {
+                _logger.LogInformation("Ignoring low-accuracy reading: {Accuracy}m", reading.PositionAccuracy);
+                return;
+            }
+
             // FIRE THE EVENT
             LocationUpdated?.Invoke(this, reading);
 
@@ -221,22 +242,64 @@ public class LocationTrackingService
                 );
 
                 var wasInside = _currentSiteStatus.GetValueOrDefault(site.Id, false);
-                var isInside = distance <= site.AutoTriggerRadiusMeters;
+                var bufferMeters = 20; // 20m buffer to prevent bouncing
+
+                var isInside = wasInside
+                    ? distance <= (site.AutoTriggerRadiusMeters + bufferMeters)  // Must go further out to exit
+                    : distance <= (site.AutoTriggerRadiusMeters - bufferMeters); // Must go further in to enter
 
                 // Detect transition
                 if (isInside && !wasInside)
                 {
                     // ENTER event
-                    _logger.LogWarning("🟢 ENTER detected: {SiteName} (distance: {Distance}m)", site.Name, (int)distance);
-                    _ = HandleEnterEventAsync(site, reading.Position.Latitude, reading.Position.Longitude);
-                    _currentSiteStatus[site.Id] = true;
+                    // User appears to be entering - start dwell timer
+                    if (!_potentialEnterTimes.ContainsKey(site.Id))
+                    {
+                        _potentialEnterTimes[site.Id] = DateTime.Now;
+                        _logger.LogInformation("Potential ENTER for {SiteName}, waiting {Dwell}s...", site.Name, DwellTimeSeconds);
+                    }
+                    else
+                    {
+                        // Check if dwell time elapsed
+                        var dwellTime = (DateTime.Now - _potentialEnterTimes[site.Id]).TotalSeconds;
+                        if (dwellTime >= DwellTimeSeconds)
+                        {
+                            // Confirmed ENTER
+                            _logger.LogWarning("ENTER confirmed: {SiteName} (distance: {Distance}m)", site.Name, (int)distance);
+                            _ = HandleEnterEventAsync(site, reading.Position.Latitude, reading.Position.Longitude);
+                            _currentSiteStatus[site.Id] = true;
+                            _potentialEnterTimes.Remove(site.Id);
+                        }
+                    }
                 }
                 else if (!isInside && wasInside)
                 {
                     // EXIT event
-                    _logger.LogWarning("🔴 EXIT detected: {SiteName} (distance: {Distance}m)", site.Name, (int)distance);
-                    _ = HandleExitEventAsync(site, reading.Position.Latitude, reading.Position.Longitude);
-                    _currentSiteStatus[site.Id] = false;
+                    // User appears to be exiting - start dwell timer
+                    if (!_potentialExitTimes.ContainsKey(site.Id))
+                    {
+                        _potentialExitTimes[site.Id] = DateTime.Now;
+                        _logger.LogInformation("Potential EXIT for {SiteName}, waiting {Dwell}s...", site.Name, DwellTimeSeconds);
+                    }
+                    else
+                    {
+                        // Check if dwell time elapsed
+                        var dwellTime = (DateTime.Now - _potentialExitTimes[site.Id]).TotalSeconds;
+                        if (dwellTime >= DwellTimeSeconds)
+                        {
+                            // Confirmed EXIT
+                            _logger.LogWarning("EXIT confirmed: {SiteName} (distance: {Distance}m)", site.Name, (int)distance);
+                            _ = HandleExitEventAsync(site, reading.Position.Latitude, reading.Position.Longitude);
+                            _currentSiteStatus[site.Id] = false;
+                            _potentialExitTimes.Remove(site.Id);
+                        }
+                    }
+                }
+                else
+                {
+                    // Clear any pending transitions if state is stable
+                    _potentialEnterTimes.Remove(site.Id);
+                    _potentialExitTimes.Remove(site.Id);
                 }
             }
         }

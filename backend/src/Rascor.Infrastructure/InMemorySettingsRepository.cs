@@ -5,14 +5,14 @@ namespace Rascor.Infrastructure;
 
 public class InMemorySettingsRepository : ISettingsRepository
 {
-    private RemoteConfig _config = RemoteConfig.Default;
+    private GeofenceConfig _config = GeofenceConfig.Default;
 
-    public Task<RemoteConfig> GetConfigAsync(CancellationToken ct = default)
+    public Task<GeofenceConfig> GetConfigAsync(CancellationToken ct = default)
     {
         return Task.FromResult(_config);
     }
 
-    public Task UpdateConfigAsync(RemoteConfig config, CancellationToken ct = default)
+    public Task UpdateConfigAsync(GeofenceConfig config, CancellationToken ct = default)
     {
         _config = config;
         return Task.CompletedTask;

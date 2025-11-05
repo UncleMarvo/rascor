@@ -36,6 +36,19 @@
                 </VerticalStackLayout>
             </Frame>
 
+
+            <!-- User Data -->
+            <Frame>
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="ℹ️ Register Device ID" FontSize="18" FontAttributes="Bold" TextColor="Black" />
+                    <Button 
+                            Text="Register Device"
+                            Clicked="OnRegisterDeviceClicked"
+                            BackgroundColor="LightBlue"
+                            TextColor="Black" />
+                </VerticalStackLayout>
+            </Frame>
+
             <!-- Sync Status Section -->
             <!--<Frame>
                 <VerticalStackLayout Spacing="10">

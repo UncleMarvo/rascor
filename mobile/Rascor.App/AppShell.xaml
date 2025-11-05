@@ -55,11 +55,6 @@
             <ShellContent ContentTemplate="{DataTemplate pages:HomePage}"/>
         </Tab>
 
-        <!-- My Work Tab -->
-        <!--<Tab Title="Work Icon="work_icon.svg"">
-            <ShellContent ContentTemplate="{DataTemplate pages:MyWorkPage}" />
-        </Tab>-->
-
         <!-- History Tab -->
         <Tab Title="History" Icon="history_icon.svg">
             <ShellContent ContentTemplate="{DataTemplate pages:HistoryPage}" />

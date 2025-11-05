@@ -4,14 +4,14 @@ namespace Rascor.Domain;
 // REMOTE CONFIG
 // ============================================================================
 
-public record RemoteConfig(
+public record GeofenceConfig(
     int DefaultRadiusMeters,
     int MaxConcurrentSites,
     int DebounceEnterMinutes,
     int DebounceExitMinutes
 )
 {
-    public static RemoteConfig Default => new(
+    public static GeofenceConfig Default => new(
         DefaultRadiusMeters: 150,
         MaxConcurrentSites: 20,
         DebounceEnterMinutes: 5,

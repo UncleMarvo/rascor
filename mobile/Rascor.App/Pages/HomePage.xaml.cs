@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Rascor.App.Core.Models;
 using Rascor.App.Core.Services;
 using Rascor.App.Services;
 using Shiny.Locations;
@@ -16,28 +15,27 @@ public partial class HomePage : ContentPage
     private readonly ConfigService _configService;
     private readonly LocationTrackingService _locationTracking;
     private readonly BackendApi _backendApi;
-    private readonly RamsPhotoService _ramsPhotoService;
     private readonly DeviceIdentityService _deviceIdentity;
     private readonly GeofenceStateService _stateService;
-
+    private readonly IServiceProvider _serviceProvider;
 
     public HomePage(
         ILogger<HomePage> logger,
         ConfigService configService,
         LocationTrackingService locationTracking,
         BackendApi backendApi,
-        RamsPhotoService ramsPhotoService,
         DeviceIdentityService deviceIdentity,
-        GeofenceStateService stateService)
+        GeofenceStateService stateService,
+        IServiceProvider serviceProvider)
     {
         InitializeComponent();
         _logger = logger;
         _configService = configService;
         _locationTracking = locationTracking;
         _backendApi = backendApi;
-        _ramsPhotoService = ramsPhotoService;
         _deviceIdentity = deviceIdentity;
         _stateService = stateService;
+        _serviceProvider = serviceProvider;
 
         LoadDashboard();
     }
@@ -124,7 +122,6 @@ public partial class HomePage : ContentPage
                 WarningLabel.IsVisible = false;
                 CheckInButton.IsVisible = false;
                 CheckOutButton.IsVisible = false;
-                TakeRamsPhotoButton.IsVisible = false;
                 return;
             }
 
@@ -170,7 +167,6 @@ public partial class HomePage : ContentPage
                     }
 
                     CheckInButton.IsVisible = false;
-                    TakeRamsPhotoButton.IsVisible = true;
                 }
             }
             else
@@ -190,7 +186,6 @@ public partial class HomePage : ContentPage
                         : TimeSpan.Zero;
 
                     CheckInButton.IsVisible = notAtSiteDuration.TotalMinutes >= 2;
-                    TakeRamsPhotoButton.IsVisible = false;
                 }
                 else
                 {
@@ -212,7 +207,6 @@ public partial class HomePage : ContentPage
 
                     CheckInTimeLabel.IsVisible = false;
                     CheckInButton.IsVisible = false;
-                    TakeRamsPhotoButton.IsVisible = false;
                 }
             }
         }
@@ -225,7 +219,6 @@ public partial class HomePage : ContentPage
             WarningLabel.IsVisible = false;
             CheckInButton.IsVisible = false;
             CheckOutButton.IsVisible = false;
-            TakeRamsPhotoButton.IsVisible = false;
         }
     }
 
@@ -347,124 +340,6 @@ public partial class HomePage : ContentPage
             LoadingIndicator.IsVisible = false;
             UpdateLocationStatus();
         }
-    }
-
-    private async void OnTakeRamsPhotoClicked(object sender, EventArgs e)
-    {
-        RamsPhoto? photo = null;
-        string? currentSiteName = null;
-
-        try
-        {
-            var currentSite = _locationTracking.GetCurrentSite();
-            if (currentSite == null)
-            {
-                await DisplayAlert("Error", "You must be at a site", "OK");
-                return;
-            }
-
-            currentSiteName = currentSite.Name;
-            var userId = _deviceIdentity.GetUserId();
-
-            // Show choice: Camera or Gallery
-            var choice = await DisplayActionSheet(
-                "RAMS Form Photo",
-                "Cancel",
-                null,
-                "📷 Take Photo",
-                "🖼️ Choose from Gallery"
-            );
-
-            if (choice == "Cancel" || choice == null)
-            {
-                return;
-            }
-
-            if (choice == "📷 Take Photo")
-            {
-                _logger.LogInformation("🔵 About to call TakePhotoAsync");
-                photo = await _ramsPhotoService.TakePhotoAsync(userId, currentSite.Id, currentSite.Name);
-                _logger.LogInformation("🔵 TakePhotoAsync completed, photo is {Result}", photo != null ? "not null" : "null");
-            }
-            else if (choice == "🖼️ Choose from Gallery")
-            {
-                _logger.LogInformation("🔵 About to call PickPhotoAsync");
-                photo = await _ramsPhotoService.PickPhotoAsync(userId, currentSite.Id, currentSite.Name);
-                _logger.LogInformation("🔵 PickPhotoAsync completed, photo is {Result}", photo != null ? "not null" : "null");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed in photo capture");
-        }
-
-        // Small delay to let camera activity fully close
-        await Task.Delay(500);
-
-        // Force back to main thread and show result
-        await MainThread.InvokeOnMainThreadAsync(async () =>
-        {
-            try
-            {
-                if (photo != null)
-                {
-                    _logger.LogInformation("🔵 About to upload RAMS photo...");
-                    _logger.LogWarning("🔵 _ramsPhotoService null check: {IsNull}", _ramsPhotoService == null);
-
-                    var uploaded = await _ramsPhotoService.UploadPhotoAsync(photo);
-
-                    _logger.LogWarning("🔵 Upload completed, result: {Uploaded}", uploaded);
-
-                    // version 1.0
-                    var message = $"Photo saved locally for {currentSiteName}\n\nSize: {photo.FileSizeBytes / 1024:N0} KB\n";
-
-                    // version 1.1
-                    //var message = uploaded
-                    //    ? $"Photo uploaded for {currentSiteName}!\n\nSize: {photo.FileSizeBytes / 1024:N0} KB"
-                    //    : $"Photo saved for {currentSiteName}\n\nSize: {photo.FileSizeBytes / 1024:N0} KB\n\n⚠️ Will upload when online";
-
-                    await DisplayAlert("✅ Photo Saved", message, "OK");
-                }
-                else
-                {
-                    await DisplayAlert("Cancelled", "No photo was captured", "OK");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogInformation("🔴 EXCEPTION caught in photo upload handler");
-                _logger.LogWarning(ex, "🔴 EXCEPTION caught in photo upload handler: {Message}", ex.Message);
-                await DisplayAlert("Error", $"Upload error: {ex.Message}", "OK");
-            }
-        });
-    }
-
-    //private void UpdateWorkAssignments()
-    //{
-    //    // TODO: Load from API/local storage
-    //    WorkItemsContainer.Clear();
-    //    TodaysWorkLabel.Text = "No work assignments today";
-    //    TodaysWorkLabel.TextColor = Colors.Gray;
-    //}
-
-    //private void UpdateSyncStatus()
-    //{
-    //    // TODO: Check pending queue
-    //    SyncStatusLabel.Text = "All synced ✓";
-    //    SyncStatusLabel.TextColor = Colors.Green;
-    //}
-
-    //private void UpdateWeeklyStats()
-    //{
-    //    // TODO: Query local database
-    //    SitesVisitedLabel.Text = "0";
-    //    RamsSignedLabel.Text = "0";
-    //}
-
-    private async void OnSignNowClicked(object sender, EventArgs e)
-    {
-        // TODO: Navigate to RAMS viewer
-        await DisplayAlert("Sign RAMS", "This will navigate to RAMS signing", "OK");
     }
 
     //private async void OnSyncNowClicked(object sender, EventArgs e)

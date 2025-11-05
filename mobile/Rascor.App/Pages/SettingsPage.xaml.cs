@@ -1,7 +1,11 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.ApplicationModel.Communication;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.PlatformConfiguration;
 using Rascor.App.Core;
 using Rascor.App.Services;
 using Shiny.Locations;
+using System.Numerics;
 
 namespace Rascor.App.Pages;
 
@@ -11,19 +15,22 @@ public partial class SettingsPage : ContentPage
     private readonly ConfigService _configService;
     private readonly DeviceIdentityService _deviceIdentity;
     private readonly IGeofenceManager _geofenceManager;
+    private readonly RegistrationEmailService _emailService;
 
     public SettingsPage(
         ILogger<SettingsPage> logger,
         ConfigService configService,
         DeviceIdentityService deviceIdentity,
-        IGeofenceManager geofenceManager)
+        IGeofenceManager geofenceManager,
+        RegistrationEmailService emailService)
     {
         InitializeComponent();
         _logger = logger;
         _configService = configService;
         _deviceIdentity = deviceIdentity;
         _geofenceManager = geofenceManager;
-        
+        _emailService = emailService;
+
         LoadSettings();
     }
 
@@ -52,6 +59,60 @@ public partial class SettingsPage : ContentPage
     private void RefreshSettings()
     {
         LoadSettings();
+    }
+
+    private async void OnRegisterDeviceClicked(object sender, EventArgs e)
+    {
+        // Get both IDs
+        var deviceUserId = GetDeviceUserId();
+        var deviceIdentifier = GetDeviceIdentifier();
+
+        // Show confirmation with device info
+        bool confirm = await DisplayAlert(
+            "Register Device",
+            $"Device: {deviceIdentifier}\n" +
+            $"User ID: {deviceUserId}\n\n" +
+            $"Open email to register?",
+            "Yes",
+            "Cancel"
+        );
+
+        if (!confirm)
+            return;
+
+        var emailService = new RegistrationEmailService();
+        bool success = await emailService.SendRegistrationEmailAsync(deviceUserId, deviceIdentifier);
+
+        if (success)
+        {
+            await DisplayAlert(
+                "Email Opened",
+                "Please send the email to complete registration.",
+                "OK"
+            );
+        }
+        else
+        {
+            await DisplayAlert(
+                "Error",
+                "Could not open email app. Please ensure you have an email app installed.",
+                "OK"
+            );
+        }
+    }
+
+    private string GetDeviceUserId()
+    {
+        //const string DeviceUserIdKey = "device_user_id";
+        //return Preferences.Get(DeviceUserIdKey, string.Empty);
+
+        return _deviceIdentity.GetDeviceId();
+    }
+
+    private string GetDeviceIdentifier()
+    {
+        var deviceInfo = DeviceInfo.Current;
+        return $"{deviceInfo.Manufacturer} {deviceInfo.Model} ({deviceInfo.Platform} {deviceInfo.VersionString})";
     }
 
     private void UpdateGeofenceStatus()

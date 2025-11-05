@@ -29,31 +29,12 @@ public interface ISiteRepository
 }
 
 /// <summary>
-/// Repository for RAMS photos
-/// </summary>
-public interface IRamsPhotoRepository
-{
-    Task<RamsPhoto> AddAsync(RamsPhoto photo, CancellationToken ct = default);
-    Task<List<RamsPhoto>> GetByUserIdAsync(string userId, int limit = 50, CancellationToken ct = default);
-    Task<List<RamsPhoto>> GetBySiteIdAsync(string siteId, CancellationToken ct = default);
-}
-
-/// <summary>
-/// Repository for user-site assignments
-/// </summary>
-public interface IAssignmentRepository
-{
-    Task<List<Site>> GetAssignedSitesAsync(string userId, CancellationToken ct = default);
-    Task AssignAsync(string userId, string siteId, CancellationToken ct = default);
-}
-
-/// <summary>
 /// Repository for remote settings
 /// </summary>
 public interface ISettingsRepository
 {
-    Task<RemoteConfig> GetConfigAsync(CancellationToken ct = default);
-    Task UpdateConfigAsync(RemoteConfig config, CancellationToken ct = default);
+    Task<GeofenceConfig> GetConfigAsync(CancellationToken ct = default);
+    Task UpdateConfigAsync(GeofenceConfig config, CancellationToken ct = default);
 }
 
 /// <summary>

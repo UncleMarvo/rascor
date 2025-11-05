@@ -55,24 +55,18 @@ public class ConfigService
         // Fetch config and sites for actual user ID
         _logger.LogInformation("Fetching sites for user: {UserId}", userId);
         var bootstrap = await _api.GetConfigAsync(userId);
-        
+
         if (bootstrap == null || bootstrap.Sites.Count == 0)
         {
-            // PRODUCTION: No fallback - fail with clear instructions
-            var errorMessage = 
-                $"No sites assigned to device ID: {userId}\n\n" +
-                $"Database Assignment Required:\n" +
-                $"Run this SQL on your backend database:\n\n" +
-                $"UPDATE public.assignments\n" +
-                $"SET user_id = '{userId}'\n" +
-                $"WHERE site_id IN ('site-001', 'site-002');\n\n" +
-                $"Replace site IDs with your actual sites.";
-            
+            var errorMessage =
+                $"No sites found in the database.\n\n" +
+                $"Please contact your administrator to add sites to the system.";
+
             _logger.LogError("❌ {ErrorMessage}", errorMessage);
             throw new InvalidOperationException(errorMessage);
         }
-        
-        _logger.LogWarning("Found {Count} sites assigned to user {UserId}", bootstrap.Sites.Count, userId);
+
+        _logger.LogWarning("Found {Count} sites for user {UserId}", bootstrap.Sites.Count, userId);
         Config = bootstrap.Config;
         Sites = bootstrap.Sites;
 

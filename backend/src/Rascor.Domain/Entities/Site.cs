@@ -6,6 +6,6 @@ public class Site
     public string Name { get; set; } = string.Empty;
     public double Latitude { get; set; }
     public double Longitude { get; set; }
-    public int AutoTriggerRadiusMeters { get; set; } = 50;      // ADD THIS
-    public int ManualTriggerRadiusMeters { get; set; } = 150;   // ADD THIS
+    public int AutoTriggerRadiusMeters { get; set; } = 100;
+    public int ManualTriggerRadiusMeters { get; set; } = 150;
 }

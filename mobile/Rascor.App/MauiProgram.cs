@@ -57,13 +57,11 @@ public static class MauiProgram
         
         // New tab pages
         builder.Services.AddTransient<HomePage>();
-        builder.Services.AddTransient<MyWorkPage>();
         builder.Services.AddTransient<HistoryPage>();
         builder.Services.AddTransient<SettingsPage>();
 
         builder.Services.AddSingleton<GeofenceStateService>();
-
-        builder.Services.AddSingleton<RamsPhotoService>();
+        builder.Services.AddSingleton<RegistrationEmailService>();
 
         return builder.Build();
     }

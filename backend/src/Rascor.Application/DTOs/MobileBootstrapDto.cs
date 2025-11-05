@@ -1,16 +1,14 @@
 namespace Rascor.Application.DTOs;
 
 /// <summary>
-/// Extended bootstrap response including work assignments and RAMS status
+/// Bootstrap response with sites and basic config
 /// </summary>
-public record MobileBootstrapDto(
-    RemoteConfigDto Config,
-    List<SiteDto> Sites,
-    List<WorkAssignmentDto>? WorkAssignments,
-    Dictionary<string, bool>? RamsSignedToday
+public record MobileBootstrapResponse(
+    RemoteConfig Config,
+    List<SiteDto> Sites
 );
 
-public record RemoteConfigDto(
+public record RemoteConfig(
     int PollIntervalSeconds,
     bool EnableOfflineMode
 );
