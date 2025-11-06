@@ -84,6 +84,21 @@ public class RascorGeofenceDelegate : IGeofenceDelegate
 
             _logger.LogInformation("Successfully processed geofence event");
         }
+        catch (ApiValidationException ex)
+        {
+            // Validation errors (e.g., "Site not found") - these are permanent failures
+            // Don't queue them because they will never succeed
+            _logger.LogError(ex, 
+                "❌ Validation error processing geofence event for {SiteId}: {Message}. " +
+                "This error indicates a permanent problem (e.g., site not found).",
+                region.Identifier, ex.Message);
+            
+            // Show notification with error details
+            _notificationService.ShowNotification(
+                title: "Geofence Event (Error)",
+                message: $"Site {eventType}: {region.Identifier}\nError: {ex.Message}"
+            );
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Failed to process geofence event for {SiteId}", region.Identifier);

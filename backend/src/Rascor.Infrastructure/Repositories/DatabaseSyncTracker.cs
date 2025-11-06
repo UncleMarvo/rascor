@@ -19,7 +19,18 @@ public class DatabaseSyncTracker : ISyncTracker
         var tracker = await _dbContext.SyncTrackers
             .FirstOrDefaultAsync(s => s.EntityName == entityName);
 
-        return tracker?.LastSyncTime ?? DateTime.UtcNow.AddDays(-30);
+        // If no tracker exists, default to 30 days ago
+        // This means the first sync will pick up all events from the last 30 days
+        var defaultLastSync = DateTime.UtcNow.AddDays(-30);
+        var lastSync = tracker?.LastSyncTime ?? defaultLastSync;
+        
+        // Log if using default (no tracker record exists)
+        if (tracker == null)
+        {
+            // Note: Can't use ILogger here without DI, but this is logged in the sync service
+        }
+        
+        return lastSync;
     }
 
     public async Task UpdateLastSyncTimeAsync(string entityName, DateTime syncTime)

@@ -1,8 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using Rascor.Application.DTOs;
+﻿using Rascor.Application.DTOs;
 using Rascor.Domain;
 using Rascor.Domain.Entities;
-using Rascor.Infrastructure.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Rascor.Application.Services;
 

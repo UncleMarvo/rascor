@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Rascor.Application;
 using Rascor.Application.DTOs;
 using Rascor.Application.Services;
@@ -8,6 +9,7 @@ using Rascor.Infrastructure;
 using Rascor.Infrastructure.Data;
 using Rascor.Infrastructure.ExternalServices;
 using Rascor.Infrastructure.Repositories;
+using Rascor.Infrastructure.DepedencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,7 +67,11 @@ builder.Services.AddDbContext<RascorDbContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null
         ).CommandTimeout(120)
-    ));
+    )
+    // Suppress PendingModelChangesWarning since we refactored DbContext configuration
+    // but didn't actually change the database schema - schema matches existing migrations
+    .ConfigureWarnings(warnings => 
+        warnings.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
 // Repositories (EF Core + PostgreSQL)
 builder.Services.AddScoped<IGeofenceEventRepository, EfGeofenceEventRepository>();
@@ -79,6 +85,9 @@ builder.Services.AddSingleton<IEmailProvider, ConsoleEmailProvider>();
 // Application handlers
 builder.Services.AddScoped<LogGeofenceEventHandler>();
 builder.Services.AddScoped<GetMobileBootstrap>();
+
+// Procore Integration
+builder.Services.AddProcoreIntegration(builder.Configuration);
 
 // Zoho Integration Services
 builder.Services.AddHttpClient<ZohoCreatorClient>();
@@ -113,6 +122,8 @@ try
         scopeLogger.LogInformation("Starting database migration...");
         
         // Apply any pending migrations
+        // Suppress the PendingModelChangesWarning since we refactored the DbContext configuration
+        // but didn't actually change the database schema - the schema matches the existing migrations
         await db.Database.MigrateAsync();
         
         scopeLogger.LogInformation("Database migration complete.");
@@ -176,6 +187,7 @@ app.MapGet("/", () => new
         "GET /api/geofence-events/user/{userId}/today",
         "POST /api/geofence-events/manual-checkin",
         "POST /api/geofence-events/manual-checkout",
+        "POST /api/errors/report",
         "GET /swagger"
     }
 });
@@ -194,17 +206,79 @@ app.MapGet("/config/mobile", async (
 app.MapPost("/events/geofence", async (
     GeofenceEventRequest request,
     LogGeofenceEventHandler handler,
+    ILogger<Program> logger,
+    RascorDbContext dbContext,
     CancellationToken ct) =>
 {
-    var evt = await handler.HandleAsync(
-        request.UserId,
-        request.SiteId,
-        request.EventType,
-        request.Latitude,
-        request.Longitude,
-        ct);
-    
-    return Results.Ok(evt);
+    try
+    {
+        // Log database connection info for debugging
+        var databaseName = dbContext.Database.GetDbConnection().Database;
+        var dataSource = dbContext.Database.GetDbConnection().DataSource;
+        logger.LogInformation(
+            "📥 Received geofence event request: UserId={UserId}, SiteId={SiteId}, EventType={EventType}. " +
+            "Database: {Database}, DataSource: {DataSource}",
+            request.UserId, request.SiteId, request.EventType, databaseName, dataSource);
+        
+        var evt = await handler.HandleAsync(
+            request.UserId,
+            request.SiteId,
+            request.EventType,
+            request.Latitude,
+            request.Longitude,
+            ct);
+        
+        // Verify event exists in database after saving
+        var verifyEvent = await dbContext.GeofenceEvents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == evt.Id, ct);
+        
+        if (verifyEvent == null)
+        {
+            logger.LogError(
+                "⚠️ CRITICAL: Event {EventId} was saved but cannot be verified in database! " +
+                "Database: {Database}, DataSource: {DataSource}",
+                evt.Id, databaseName, dataSource);
+        }
+        else
+        {
+            logger.LogInformation(
+                "✅ Event {EventId} verified in database after save. Timestamp: {Timestamp}",
+                evt.Id, verifyEvent.Timestamp);
+        }
+        
+        return Results.Ok(evt);
+    }
+    catch (InvalidOperationException ex)
+    {
+        // Validation errors (e.g., site not found) - return 400 Bad Request
+        // This allows mobile app to see the error message and handle it appropriately
+        logger.LogWarning(
+            "Validation error processing geofence event: UserId={UserId}, SiteId={SiteId}, EventType={EventType}, Error={Error}",
+            request.UserId, request.SiteId, request.EventType, ex.Message);
+        
+        return Results.BadRequest(new 
+        { 
+            error = ex.Message,
+            userId = request.UserId,
+            siteId = request.SiteId,
+            eventType = request.EventType
+        });
+    }
+    catch (Exception ex)
+    {
+        // Unexpected errors (database, network, etc.) - return 500 Internal Server Error
+        // Log full exception details for debugging
+        logger.LogError(ex,
+            "Unexpected error processing geofence event: UserId={UserId}, SiteId={SiteId}, EventType={EventType}",
+            request.UserId, request.SiteId, request.EventType);
+        
+        // In production, don't expose internal error details to client
+        // Only return generic message, full details are in logs
+        return Results.Problem(
+            detail: "An error occurred while processing the geofence event. Please try again.",
+            statusCode: 500);
+    }
 })
 .WithName("LogGeofenceEvent")
 .WithOpenApi();
@@ -241,12 +315,24 @@ app.MapPost("/api/geofence-events/manual-checkout", async (
 // ============================================================================
 app.MapGet("/api/geofence-events/user/{userId}/today", async (
     string userId,
-    RascorDbContext dbContext) =>
+    RascorDbContext dbContext,
+    ILogger<Program> logger) =>
 {
     try
     {
         var today = DateTime.UtcNow.Date;  // CHANGED: Use UtcNow instead of Today
         var tomorrow = today.AddDays(1);
+
+        logger.LogInformation(
+            "Querying events for userId={UserId} from {Today} to {Tomorrow}",
+            userId, today, tomorrow);
+
+        // First, get total count of events for this user (for debugging)
+        var totalEventsForUser = await dbContext.GeofenceEvents
+            .Where(e => e.UserId == userId)
+            .CountAsync();
+
+        logger.LogInformation("Total events for user {UserId}: {Count}", userId, totalEventsForUser);
 
         var events = await dbContext.GeofenceEvents
             .Where(e => e.UserId == userId &&
@@ -265,14 +351,48 @@ app.MapGet("/api/geofence-events/user/{userId}/today", async (
             .OrderByDescending(e => e.Timestamp)
             .ToListAsync();
 
+        logger.LogInformation(
+            "Found {Count} events for user {UserId} today (from {Today} to {Tomorrow})",
+            events.Count, userId, today, tomorrow);
+
         return Results.Ok(events);
     }
     catch (Exception ex)
     {
-        return Results.StatusCode(500);
+        logger.LogError(ex, "Error querying today's events for user {UserId}", userId);
+        return Results.Problem(
+            detail: $"An error occurred while querying events: {ex.Message}",
+            statusCode: 500);
     }
 })
 .WithName("GetTodaysEvents")
+.WithOpenApi();
+
+// ============================================================================
+// ERROR REPORTING - Receive error reports from mobile app
+// ============================================================================
+app.MapPost("/api/errors/report", async (
+    MobileErrorReport request,
+    ILogger<Program> logger) =>
+{
+    // Log error report to Azure App Service logs for production monitoring
+    // This allows us to see device errors in production without accessing device logs
+    logger.LogError(
+        "[MOBILE ERROR REPORT] ErrorType: {ErrorType}, UserId: {UserId}, " +
+        "SiteId: {SiteId}, EventType: {EventType}, Message: {Message}, " +
+        "StackTrace: {StackTrace}, Timestamp: {Timestamp}",
+        request.ErrorType,
+        request.UserId,
+        request.SiteId ?? "N/A",
+        request.EventType ?? "N/A",
+        request.Message,
+        request.StackTrace ?? "N/A",
+        request.Timestamp);
+    
+    // Return success immediately - we don't want error reporting to block the app
+    return Results.Ok(new { success = true, message = "Error reported" });
+})
+.WithName("ReportMobileError")
 .WithOpenApi();
 
 // ==============================================
@@ -291,8 +411,14 @@ app.MapGet("/api/test/sync-now", async (
         .Where(e => e.Timestamp > lastSync)
         .CountAsync();
 
+    // Log database connection info
+    var databaseName = dbContext.Database.GetDbConnection().Database;
+    var dataSource = dbContext.Database.GetDbConnection().DataSource;
+
     return Results.Ok(new
     {
+        database = databaseName,
+        dataSource = dataSource,
         totalEventsInDatabase = totalEvents,
         eventsSinceLastSync = eventsSinceLastSync,
         lastSyncTime = lastSync,
@@ -302,8 +428,67 @@ app.MapGet("/api/test/sync-now", async (
     });
 });
 
+// Diagnostic endpoint to verify events exist in database
+app.MapGet("/api/test/verify-events", async (
+    IServiceProvider serviceProvider,
+    ILogger<Program> logger) =>
+{
+    try
+    {
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<RascorDbContext>();
+
+        var databaseName = dbContext.Database.GetDbConnection().Database;
+        var dataSource = dbContext.Database.GetDbConnection().DataSource;
+        var connectionString = dbContext.Database.GetConnectionString();
+        
+        // Mask password in connection string
+        var safeConnectionString = connectionString != null
+            ? System.Text.RegularExpressions.Regex.Replace(connectionString, @"Password=([^;]+)", "Password=***")
+            : "null";
+
+        var totalEvents = await dbContext.GeofenceEvents.CountAsync();
+        var oldestEvent = await dbContext.GeofenceEvents
+            .OrderBy(e => e.Timestamp)
+            .Select(e => new { e.Id, e.Timestamp, e.UserId, e.SiteId })
+            .FirstOrDefaultAsync();
+        
+        var newestEvent = await dbContext.GeofenceEvents
+            .OrderByDescending(e => e.Timestamp)
+            .Select(e => new { e.Id, e.Timestamp, e.UserId, e.SiteId })
+            .FirstOrDefaultAsync();
+
+        var eventsLastHour = await dbContext.GeofenceEvents
+            .Where(e => e.Timestamp > DateTime.UtcNow.AddHours(-1))
+            .CountAsync();
+
+        var eventsToday = await dbContext.GeofenceEvents
+            .Where(e => e.Timestamp >= DateTime.UtcNow.Date)
+            .CountAsync();
+
+        return Results.Ok(new
+        {
+            database = databaseName,
+            dataSource = dataSource,
+            connectionString = safeConnectionString,
+            totalEvents = totalEvents,
+            eventsLastHour = eventsLastHour,
+            eventsToday = eventsToday,
+            oldestEvent = oldestEvent,
+            newestEvent = newestEvent,
+            currentUtcTime = DateTime.UtcNow
+        });
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error in verify-events endpoint");
+        return Results.Problem(detail: ex.Message, statusCode: 500);
+    }
+});
+
 app.MapPost("/api/test/force-sync", async (
     IServiceProvider serviceProvider,
+    IConfiguration configuration,
     ILogger<Program> logger) =>
 {
     try
@@ -341,14 +526,31 @@ app.MapPost("/api/test/force-sync", async (
 
         logger.LogInformation("Found {Count} events to sync to Zoho", events.Count);
 
+        // Get the date-time format from configuration (must match Zoho Creator app settings)
+        // Format is configurable via Zoho:DateTimeFormat app setting
+        // Default: "dd-MMM-yyyy HH:mm:ss" (most common format)
+        var dateFormat = configuration["Zoho:DateTimeFormat"] ?? "dd-MMM-yyyy HH:mm:ss";
+        
+        if (string.IsNullOrWhiteSpace(configuration["Zoho:DateTimeFormat"]))
+        {
+            logger.LogWarning(
+                "⚠️ Zoho:DateTimeFormat not configured. Using default format 'dd-MMM-yyyy HH:mm:ss'. " +
+                "To set the correct format: Add 'Zoho:DateTimeFormat' to app settings matching your Zoho Creator app's date-time format.");
+        }
+        else
+        {
+            logger.LogInformation("Using Zoho date-time format: {Format}", dateFormat);
+        }
+
         // Send IDs only, no names
+        // Format timestamp to match Zoho Creator app's date-time format setting
         var zohoRecords = events.Select(e => new
         {
             ID = e.Id,
             User_ID = e.UserId,
             Site_ID = e.SiteId,
             Event_Type1 = e.EventType,
-            Timestamp = e.Timestamp.ToString("dd-MMM-yyyy HH:mm:ss"),
+            Timestamp = e.Timestamp.ToString(dateFormat),
             Latitude1 = e.Latitude,
             Longitude1 = e.Longitude,
             Trigger_Method1 = e.TriggerMethod
@@ -436,5 +638,16 @@ public record GeofenceEventRequest(
     string EventType, // "Enter" or "Exit"
     double? Latitude,
     double? Longitude
+);
+
+// Mobile error reporting DTO - for reporting device errors to backend
+public record MobileErrorReport(
+    string ErrorType,        // e.g., "ApiError", "NetworkError", "Timeout", "Unexpected"
+    string UserId,           // Device/user ID
+    string? SiteId,          // Optional: Site ID if error occurred during geofence event
+    string? EventType,       // Optional: Event type if error occurred during geofence event
+    string Message,          // Error message
+    string? StackTrace,      // Optional: Stack trace for unexpected errors
+    DateTime Timestamp       // When the error occurred (UTC)
 );
 

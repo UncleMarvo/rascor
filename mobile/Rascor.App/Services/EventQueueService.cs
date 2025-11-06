@@ -57,7 +57,8 @@ public class EventQueueService
     }
 
     /// <summary>
-    /// Try to post event, queue if offline
+    /// Try to post event, queue if offline or transient error
+    /// Validation errors (400 Bad Request) are NOT queued because they will never succeed
     /// </summary>
     public async Task<bool> PostOrQueueEventAsync(GeofenceEventRequest request)
     {
@@ -68,10 +69,28 @@ public class EventQueueService
             _logger.LogInformation("✅ Event posted directly to backend");
             return true;
         }
+        catch (ApiValidationException ex)
+        {
+            // Validation errors (e.g., "Site not found") should NOT be queued
+            // These indicate permanent problems with the request data that won't be fixed by retrying
+            _logger.LogError(ex, 
+                "❌ Validation error - NOT queueing event: {Message}. " +
+                "SiteId: {SiteId}, EventType: {EventType}. " +
+                "This error will not be retried because it indicates a permanent problem.",
+                ex.Message, request.SiteId, request.EventType);
+            
+            // Re-throw so caller knows it failed permanently
+            throw;
+        }
         catch (Exception ex)
         {
-            // Any error (network, timeout, etc.) - queue for later
-            _logger.LogWarning(ex, "⚠️ Cannot reach server, queueing event offline");
+            // Transient errors (network, timeout, 500 errors, etc.) - queue for later
+            // These might succeed on retry when network is available or server recovers
+            _logger.LogWarning(ex, 
+                "⚠️ Transient error - queueing event for later sync: {Message}. " +
+                "SiteId: {SiteId}, EventType: {EventType}",
+                ex.Message, request.SiteId, request.EventType);
+            
             await QueueEventAsync(request);
             return false;
         }
@@ -121,8 +140,23 @@ public class EventQueueService
                 _logger.LogInformation("✅ Synced queued event {Id}: {EventType} for {SiteId}", 
                     queuedEvent.Id, queuedEvent.EventType, queuedEvent.SiteId);
             }
+            catch (ApiValidationException ex)
+            {
+                // Validation errors (e.g., "Site not found") - mark as synced to stop retrying
+                // These errors indicate permanent problems that won't be fixed by retrying
+                queuedEvent.IsSynced = true; // Mark as "synced" to prevent infinite retries
+                await db.UpdateAsync(queuedEvent);
+                failed++;
+                
+                _logger.LogError(ex, 
+                    "❌ Validation error syncing event {Id} - marking as failed permanently: {Message}. " +
+                    "SiteId: {SiteId}, EventType: {EventType}. " +
+                    "This event will not be retried.",
+                    queuedEvent.Id, ex.Message, queuedEvent.SiteId, queuedEvent.EventType);
+            }
             catch (Exception ex)
             {
+                // Transient errors - increment retry count and try again later
                 queuedEvent.RetryCount++;
                 queuedEvent.LastRetryAt = DateTime.UtcNow;
                 await db.UpdateAsync(queuedEvent);

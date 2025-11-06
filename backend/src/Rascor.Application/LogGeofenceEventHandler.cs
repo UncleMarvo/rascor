@@ -1,6 +1,6 @@
 using Rascor.Domain;
-using Microsoft.Extensions.Logging;
 using Rascor.Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Rascor.Application;
 
@@ -53,11 +53,13 @@ public class LogGeofenceEventHandler
             Longitude = longitude ?? 0
         };
 
+        // Save event to database
         await _eventRepo.AddAsync(evt, ct);
 
+        // Log success with event ID for tracking
         _logger.LogInformation(
-            "Geofence {EventType} event logged: User={UserId}, Site={SiteName} ({SiteId}), Lat={Lat}, Lon={Lon}",
-            eventType, userId, site.Name, siteId, latitude, longitude);
+            "✅ Geofence {EventType} event saved to database: EventId={EventId}, User={UserId}, Site={SiteName} ({SiteId}), Timestamp={Timestamp}, Lat={Lat}, Lon={Lon}",
+            eventType, evt.Id, userId, site.Name, siteId, evt.Timestamp, latitude, longitude);
 
         return evt;
     }

@@ -4,6 +4,23 @@ using System.Net.Http.Json;
 
 namespace Rascor.App.Services;
 
+/// <summary>
+/// Exception thrown when API returns a validation error (400 Bad Request)
+/// These errors should NOT be queued because they will never succeed on retry
+/// </summary>
+public class ApiValidationException : Exception
+{
+    public int StatusCode { get; }
+    public string? ErrorResponse { get; }
+
+    public ApiValidationException(int statusCode, string message, string? errorResponse = null) 
+        : base(message)
+    {
+        StatusCode = statusCode;
+        ErrorResponse = errorResponse;
+    }
+}
+
 public class ManualCheckInResponse
 {
     public bool Success { get; set; }
@@ -143,6 +160,40 @@ public class BackendApi
             cts.CancelAfter(TimeSpan.FromSeconds(30));
             
             var response = await _http.PostAsJsonAsync("/events/geofence", request, cts.Token);
+            
+            // Log response details before checking status code
+            // This helps diagnose API errors by showing what the server actually returned
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(cts.Token);
+                var errorMessage = $"API returned error status {response.StatusCode} when posting geofence event. " +
+                                 $"SiteId: {request.SiteId}, EventType: {request.EventType}, UserId: {request.UserId}. " +
+                                 $"Response body: {errorBody}";
+                
+                _logger.LogError(errorMessage);
+                
+                // Report error to backend for production monitoring
+                ReportErrorToBackend(
+                    errorType: "ApiError",
+                    userId: request.UserId,
+                    siteId: request.SiteId,
+                    eventType: request.EventType,
+                    message: errorMessage);
+                
+                // Validation errors (400 Bad Request) should NOT be queued - they indicate permanent problems
+                // Examples: "Site not found", invalid data format, etc.
+                // These errors will never succeed on retry, so throw a special exception that won't be queued
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    throw new ApiValidationException(
+                        statusCode: (int)response.StatusCode,
+                        message: $"Validation error: {errorBody}",
+                        errorResponse: errorBody);
+                }
+            }
+            
+            // This will throw HttpRequestException if status code is not 2xx
+            // (500 errors, 502, 503, etc. are transient and can be queued)
             response.EnsureSuccessStatusCode();
             
             _logger.LogInformation("Posted geofence {EventType} event for site {SiteId}", 
@@ -150,22 +201,68 @@ public class BackendApi
         }
         catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
         {
-            _logger.LogError(ex, "Request timed out posting geofence event");
+            var errorMessage = $"Request timed out posting geofence event for site {request.SiteId}";
+            _logger.LogError(ex, errorMessage);
+            
+            // Report timeout error to backend
+            ReportErrorToBackend(
+                errorType: "Timeout",
+                userId: request.UserId,
+                siteId: request.SiteId,
+                eventType: request.EventType,
+                message: errorMessage,
+                exception: ex);
+            
             throw new Exception("Connection timed out.", ex);
         }
         catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
         {
-            _logger.LogError(ex, "Request timed out posting geofence event");
+            var errorMessage = $"Request timed out posting geofence event for site {request.SiteId}";
+            _logger.LogError(ex, errorMessage);
+            
+            // Report timeout error to backend
+            ReportErrorToBackend(
+                errorType: "Timeout",
+                userId: request.UserId,
+                siteId: request.SiteId,
+                eventType: request.EventType,
+                message: errorMessage,
+                exception: ex);
+            
             throw new Exception("Connection timed out.", ex);
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "Network error posting geofence event. Message: {Message}", ex.Message);
+            // This exception is thrown by EnsureSuccessStatusCode() when status code is not 2xx
+            // The error details should already be logged above, but we log here too for completeness
+            var errorMessage = $"HTTP error posting geofence event. SiteId: {request.SiteId}, EventType: {request.EventType}, Message: {ex.Message}";
+            _logger.LogError(ex, errorMessage);
+            
+            // Report HTTP error to backend
+            ReportErrorToBackend(
+                errorType: "NetworkError",
+                userId: request.UserId,
+                siteId: request.SiteId,
+                eventType: request.EventType,
+                message: errorMessage,
+                exception: ex);
+            
             throw new Exception($"Cannot reach server. Error: {ex.Message}", ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to post geofence event");
+            var errorMessage = $"Unexpected error posting geofence event. SiteId: {request.SiteId}, EventType: {request.EventType}";
+            _logger.LogError(ex, errorMessage);
+            
+            // Report unexpected error to backend
+            ReportErrorToBackend(
+                errorType: "Unexpected",
+                userId: request.UserId,
+                siteId: request.SiteId,
+                eventType: request.EventType,
+                message: errorMessage,
+                exception: ex);
+            
             throw;
         }
     }
@@ -285,6 +382,55 @@ public class BackendApi
             _logger.LogError(ex, "Failed to get today's events");
             return new List<GeofenceEventDto>();
         }
+    }
+
+    /// <summary>
+    /// Reports an error from the mobile app to the backend for production monitoring
+    /// This is fire-and-forget - errors in reporting won't affect the app
+    /// </summary>
+    private void ReportErrorToBackend(
+        string errorType,
+        string userId,
+        string? siteId,
+        string? eventType,
+        string message,
+        Exception? exception = null)
+    {
+        // Fire-and-forget: Don't await, don't block the calling thread
+        // If error reporting fails, we don't want it to affect the app
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var errorReport = new
+                {
+                    ErrorType = errorType,
+                    UserId = userId,
+                    SiteId = siteId,
+                    EventType = eventType,
+                    Message = message,
+                    StackTrace = exception?.StackTrace,
+                    Timestamp = DateTime.UtcNow
+                };
+
+                // Use a short timeout for error reporting (5 seconds)
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                var response = await _http.PostAsJsonAsync("/api/errors/report", errorReport, cts.Token);
+                
+                // Don't log success - we don't want to spam logs
+                // Only log if reporting itself fails
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to report error to backend: {StatusCode}", response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Silently fail - we don't want error reporting errors to cause issues
+                // Only log in debug scenarios
+                _logger.LogDebug(ex, "Error reporting to backend failed (this is expected if offline)");
+            }
+        });
     }
 
     public class GeofenceEventDto

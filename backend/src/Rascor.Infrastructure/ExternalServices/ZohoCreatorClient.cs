@@ -96,8 +96,12 @@ public class ZohoCreatorClient
         var appName = _config["Zoho:AppName"];
         var dataCenter = _config["Zoho:DataCenter"] ?? "eu";
 
-        // FIXED: Add /data/ to the URL!
-        var url = $"https://creator.zoho.{dataCenter}/api/v2/{ownerName}/{appName}/form/{formName}";
+        // URL-encode OwnerName and AppName to handle special characters (e.g., @, spaces, etc.)
+        var encodedOwnerName = Uri.EscapeDataString(ownerName ?? "");
+        var encodedAppName = Uri.EscapeDataString(appName ?? "");
+        var encodedFormName = Uri.EscapeDataString(formName);
+
+        var url = $"https://creator.zoho.{dataCenter.ToLowerInvariant()}/api/v2/{encodedOwnerName}/{encodedAppName}/form/{encodedFormName}";
 
         var payload = new { data = new[] { record } };
         var json = JsonSerializer.Serialize(payload);
@@ -135,11 +139,30 @@ public class ZohoCreatorClient
         var appName = _config["Zoho:AppName"];
         var dataCenter = _config["Zoho:DataCenter"] ?? "eu";
 
-        var url = $"https://creator.zoho.{dataCenter}/api/v2/{ownerName}/{appName}/form/{formName}";
+        // URL-encode OwnerName and AppName to handle special characters (e.g., @, spaces, etc.)
+        var encodedOwnerName = Uri.EscapeDataString(ownerName ?? "");
+        var encodedAppName = Uri.EscapeDataString(appName ?? "");
+        var encodedFormName = Uri.EscapeDataString(formName);
+
+        var url = $"https://creator.zoho.{dataCenter.ToLowerInvariant()}/api/v2/{encodedOwnerName}/{encodedAppName}/form/{encodedFormName}";
 
         var payload = new { data = records };
         var json = JsonSerializer.Serialize(payload);
 
+        // Log the exact payload being sent to Zoho for debugging
+        // This will show us the exact timestamp format being sent
+        _logger.LogWarning("=== ZOHO REQUEST PAYLOAD ===");
+        _logger.LogWarning("URL: {Url}", url);
+        if (records != null && records.Count > 0)
+        {
+            _logger.LogWarning("Payload (first record): {FirstRecord}", 
+                JsonSerializer.Serialize(records[0]));
+        }
+        else
+        {
+            _logger.LogWarning("No records to send");
+        }
+        
         var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -150,32 +173,138 @@ public class ZohoCreatorClient
         var responseBody = await response.Content.ReadAsStringAsync(ct);
 
         _logger.LogWarning("=== ZOHO RESPONSE ===");
+        _logger.LogWarning("Status Code: {StatusCode}", response.StatusCode);
         _logger.LogWarning("Body: {Body}", responseBody);
 
         if (!response.IsSuccessStatusCode)
         {
+            // Log detailed error information for non-success status codes
+            _logger.LogError(
+                "❌ Zoho API returned error status {StatusCode}. URL: {Url}, Response: {Response}",
+                response.StatusCode, url, responseBody);
+            
+            // Try to parse error details if available
+            try
+            {
+                var errorJson = JsonSerializer.Deserialize<JsonElement>(responseBody);
+                if (errorJson.TryGetProperty("code", out var code))
+                {
+                    _logger.LogError("Zoho error code: {Code}", code.GetInt32());
+                }
+                if (errorJson.TryGetProperty("description", out var desc))
+                {
+                    _logger.LogError("Zoho error description: {Description}", desc.GetString());
+                }
+            }
+            catch
+            {
+                // Ignore JSON parsing errors
+            }
+            
             return false;
         }
 
         var jsonResponse = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
-        // Check for ANY errors in the response
+        // Check for errors in the response
+        // Note: Zoho may return errors in the "error" field even when records are added successfully
+        // (e.g., script errors in "On Add - On Success" scripts). Check the "code" and "message" fields
+        // to determine if records were actually rejected or just have script errors.
         if (jsonResponse.TryGetProperty("result", out var result))
         {
-            var hasErrors = false;
+            var hasRejectionErrors = false;
+            var hasScriptErrors = false;
+            
             foreach (var item in result.EnumerateArray())
             {
+                // Get error code and message for detailed logging
+                var errorCode = item.TryGetProperty("code", out var codeElement) 
+                    ? codeElement.GetInt32() 
+                    : 0;
+                var message = item.TryGetProperty("message", out var messageElement) 
+                    ? messageElement.GetString() 
+                    : "Unknown";
+                
+                // Check if record was added successfully (has ID)
+                string recordId = "unknown";
+                bool hasId = false;
+                if (item.TryGetProperty("data", out var data) && 
+                    data.TryGetProperty("ID", out var idElement))
+                {
+                    recordId = idElement.ToString() ?? "unknown";
+                    hasId = true;
+                }
+                
+                // Check if there's an error
                 if (item.TryGetProperty("error", out var errors))
                 {
-                    _logger.LogError("Zoho rejected record: {Errors}", errors.ToString());
-                    hasErrors = true;
+                    // Parse error details - can be object (field-specific) or array (general errors)
+                    string errorDetails = "";
+                    if (errors.ValueKind == JsonValueKind.Object)
+                    {
+                        // Field-specific errors: {"Timestamp":"Enter a valid date format", "Field2":"Error 2"}
+                        var fieldErrors = new List<string>();
+                        foreach (var errorProp in errors.EnumerateObject())
+                        {
+                            fieldErrors.Add($"{errorProp.Name}: {errorProp.Value.GetString()}");
+                        }
+                        errorDetails = string.Join(", ", fieldErrors);
+                    }
+                    else if (errors.ValueKind == JsonValueKind.Array)
+                    {
+                        // Array of error strings
+                        var errorList = new List<string>();
+                        foreach (var errorItem in errors.EnumerateArray())
+                        {
+                            errorList.Add(errorItem.GetString() ?? errorItem.ToString());
+                        }
+                        errorDetails = string.Join(" | ", errorList);
+                    }
+                    else
+                    {
+                        errorDetails = errors.ToString();
+                    }
+                    
+                    var fullErrorText = errors.ToString();
+                    
+                    // Script errors (like "On Add - On Success" script errors) don't mean rejection
+                    // Records are still added successfully even with script errors
+                    if (fullErrorText.Contains("On Add") || fullErrorText.Contains("On Success") || 
+                        fullErrorText.Contains("script") || fullErrorText.Contains("pushNotification"))
+                    {
+                        hasScriptErrors = true;
+                        _logger.LogWarning(
+                            "⚠️ Zoho script error (record still added successfully): Code={ErrorCode}, Message={Message}, Details={ErrorDetails}, Record ID={RecordId}",
+                            errorCode, message, errorDetails, recordId);
+                    }
+                    else
+                    {
+                        // This is a real rejection error - log detailed information
+                        hasRejectionErrors = true;
+                        _logger.LogError(
+                            "❌ Zoho rejected record: Code={ErrorCode}, Message={Message}, Error Details={ErrorDetails}, Record ID={RecordId}",
+                            errorCode, message, errorDetails, recordId);
+                    }
+                }
+                else if (hasId)
+                {
+                    // No errors, record added successfully
+                    _logger.LogInformation("✅ Zoho record added successfully: Code={ErrorCode}, Message={Message}, ID={RecordId}", 
+                        errorCode, message, recordId);
                 }
             }
 
-            if (hasErrors)
+            if (hasRejectionErrors)
             {
                 _logger.LogError("Some records were rejected by Zoho");
                 return false;
+            }
+            
+            if (hasScriptErrors)
+            {
+                _logger.LogWarning(
+                    "⚠️ Zoho script errors detected (records were added successfully, but scripts failed). " +
+                    "Fix the 'On Add - On Success' script in Zoho Creator to resolve script errors.");
             }
         }
 
